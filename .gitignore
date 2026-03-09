@@ -1,0 +1,18 @@
+node_modules
+.nuxt
+.output
+dist
+.env
+*.log
+.DS_Store
+.specstory
+
+# Runtime data (created on first write)
+server/data/artworks.json
+
+# Python
+server/python/data/
+server/python/__pycache__/
+server/python/**/__pycache__/
+*.ckpt
+

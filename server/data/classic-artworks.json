@@ -1,0 +1,23 @@
+[
+  {
+    "id": "classic-1",
+    "title": "星月夜",
+    "style": "印象派",
+    "painter": "梵高",
+    "imageUrl": "/starry-night.jpg"
+  },
+  {
+    "id": "classic-2",
+    "title": "格尔尼卡",
+    "style": "立体主义",
+    "painter": "毕加索",
+    "imageUrl": "/guernica.jpg"
+  },
+  {
+    "id": "classic-3",
+    "title": "记忆的永恒",
+    "style": "超现实主义",
+    "painter": "达利",
+    "imageUrl": "/persistence-of-memory.jpg"
+  }
+]
