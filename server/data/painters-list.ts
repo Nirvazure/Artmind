@@ -1,0 +1,35 @@
+/** 画家数据，内联为 TS 确保 Vercel serverless 无需读文件 */
+export interface PainterListItem {
+  name: string
+  style: string
+  era?: string
+  bio?: string
+  verified?: boolean
+}
+
+export const paintersListData: PainterListItem[] = [
+  { name: '达芬奇', style: '文艺复兴', era: '15-16世纪', bio: '意大利文艺复兴三杰之一，画家、科学家、发明家，《蒙娜丽莎》《最后的晚餐》作者。', verified: true },
+  { name: '拉斐尔', style: '文艺复兴', era: '15-16世纪', bio: '意大利文艺复兴三杰之一，以圣母像和梵蒂冈壁画闻名，作品和谐典雅。', verified: true },
+  { name: '米开朗琪罗', style: '文艺复兴', era: '15-16世纪', bio: '意大利文艺复兴三杰之一，雕塑家、画家，西斯廷天顶画创作者。', verified: true },
+  { name: '提香', style: '文艺复兴', era: '15-16世纪', bio: '威尼斯画派大师，色彩运用出神入化，对后世影响深远。', verified: true },
+  { name: '莫奈', style: '印象派', era: '19世纪', bio: '印象派创始人之一，以《睡莲》《日出·印象》等作品著称。', verified: true },
+  { name: '雷诺阿', style: '印象派', era: '19世纪', bio: '印象派代表画家，擅长人物与光影，画面温暖明媚。', verified: true },
+  { name: '德加', style: '印象派', era: '19世纪', bio: '印象派画家，以芭蕾舞者、赛马等题材闻名。', verified: true },
+  { name: '毕沙罗', style: '印象派', era: '19世纪', bio: '印象派核心成员，擅长乡村与城市风景。', verified: true },
+  { name: '梵高', style: '印象派', era: '19世纪', bio: '后印象派巨匠，《星月夜》《向日葵》作者，笔触强烈、色彩炽烈。', verified: true },
+  { name: '高更', style: '印象派', era: '19世纪', bio: '后印象派代表，塔希提时期作品充满原始与象征意味。', verified: true },
+  { name: '毕加索', style: '立体派', era: '20世纪', bio: '立体主义创始人，《格尔尼卡》作者，现代艺术巨匠。', verified: true },
+  { name: '康定斯基', style: '抽象派', era: '20世纪', bio: '抽象绘画先驱，将音乐与色彩结合，开创非具象艺术。', verified: true },
+  { name: '保罗克利', style: '抽象派', era: '20世纪', bio: '包豪斯教师，作品融合音乐、梦境与符号。', verified: true },
+  { name: '伦勃朗', style: '巴洛克', era: '17世纪', bio: '荷兰黄金时代大师，以光影对比与人物心理刻画著称。', verified: true },
+  { name: '卡拉瓦乔', style: '巴洛克', era: '16-17世纪', bio: '巴洛克绘画先驱，戏剧性明暗对照法的开创者。', verified: true },
+  { name: '维拉斯凯兹', style: '现实主义', era: '17世纪', bio: '西班牙宫廷画家，《宫娥》等杰作影响后世深远。', verified: true },
+  { name: '鲁本斯', style: '巴洛克', era: '16-17世纪', bio: '佛兰德斯巴洛克大师，作品富丽、动感强烈。', verified: true },
+  { name: '爱德华蒙克', style: '表现主义', era: '19-20世纪', bio: '表现主义先驱，《呐喊》成为现代焦虑的象征。', verified: true },
+  { name: '埃贡席勒', style: '表现主义', era: '20世纪', bio: '奥地利表现主义画家，以扭曲人体与强烈线条著称。', verified: true },
+  { name: '保罗塞尚', style: '后印象派', era: '19世纪', bio: '现代绘画之父，以几何化形体与色彩结构影响立体派。', verified: true },
+  { name: '安迪霍沃尔', style: '波普艺术', era: '20世纪', bio: '波普艺术代表人物，以丝网印刷与大众文化符号闻名。', verified: true },
+  { name: '德拉克洛瓦', style: '浪漫主义', era: '19世纪', bio: '法国浪漫主义大师，《自由引导人民》作者。', verified: true },
+  { name: '威廉透纳', style: '浪漫主义', era: '18-19世纪', bio: '英国风景画大师，光影与大气表现影响印象派。', verified: true },
+  { name: '康斯太勃尔', style: '浪漫主义', era: '18-19世纪', bio: '英国风景画家，对自然光的细腻描绘影响深远。', verified: true },
+]

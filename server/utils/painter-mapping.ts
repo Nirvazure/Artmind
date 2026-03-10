@@ -1,7 +1,6 @@
-import paintersListData from '../data/painters-list.json'
+import { paintersListData } from '../data/painters-list'
 
-/** 编译时导入，确保 Vercel 等 serverless 环境下可用 */
-const list = paintersListData as Array<{ name: string; style: string }>
+const list = paintersListData
 const cache = new Map<string, string[]>()
 for (const p of list) {
   const style = (p.style ?? '').trim()
