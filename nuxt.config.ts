@@ -7,11 +7,10 @@ export default defineNuxtConfig({
         maxDuration: 180,
       },
     },
-    // 开发模式：ali-oss 不打包，避免 debug 等依赖在 dev 下被错误内联导致 require$$0$5 is not a function
-    // 生产模式：ali-oss 随构建打包（配合 scripts/clear-oss-ts.mjs），Vercel 可用
-    rollupConfig: process.env.NODE_ENV === 'development' ? { external: ['ali-oss'] } : undefined,
+    // ali-oss 打包后会触发 debug 依赖的 ESM/CJS 兼容问题，改走 nitro externals 追踪依赖
     externals: {
       inline: ['lodash'],
+      external: ['ali-oss', 'debug'],
     },
   },
   app: {
@@ -37,7 +36,7 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
-  build: { transpile: ['vue-countup-v3', 'ali-oss'] },
+  build: { transpile: ['vue-countup-v3'] },
   modules: ['@pinia/nuxt', 'vuetify-nuxt-module'],
   vuetify: {
     vuetifyOptions: {
