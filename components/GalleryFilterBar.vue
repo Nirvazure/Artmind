@@ -1,47 +1,47 @@
 <template>
-  <v-sheet class="filter-bar" variant="flat">
-    <div class="filter-bar-header" @click="expanded = !expanded">
-      <span class="filter-bar-label">筛选</span>
-      <v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="20" />
-    </div>
-    <Transition name="filter-expand">
-      <div v-show="expanded" class="filter-bar-body">
-        <div class="filter-row">
-          <span class="filter-row-label">流派</span>
-          <div class="filter-style-cards">
-            <button
-              v-for="s in styles"
-              :key="s"
-              type="button"
-              class="style-pill"
-              :class="{ active: modelValueStyle === s, 'has-cover': !!styleCoverMap?.[s] }"
-              @click="onStyleClick(s)"
-            >
-              <span v-if="styleCoverMap?.[s]" class="style-pill-bg" :style="{ backgroundImage: `url(${styleCoverMap[s]})` }" />
-              <span v-if="styleCoverMap?.[s]" class="style-pill-overlay" />
-              <span class="style-pill-text">{{ s }}</span>
-            </button>
-          </div>
-        </div>
-        <div class="filter-row">
-          <span class="filter-row-label">画家</span>
-          <div class="filter-chips">
-            <v-chip
-              v-for="p in painters"
-              :key="p.name"
-              :variant="modelValuePainter === p.name ? 'flat' : 'outlined'"
-              size="small"
-              :prepend-avatar="avatarUrl(p.name)"
-              class="filter-chip"
-              @click="onPainterClick(p)"
-            >
-              {{ p.name }}
-            </v-chip>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </v-sheet>
+  <v-autocomplete
+    v-model="selected"
+    :items="searchItems"
+    placeholder="搜索流派或画家"
+    clearable
+    hide-details
+    :density="props.compact ? 'compact' : 'comfortable'"
+    variant="outlined"
+    :class="['filter-search', { 'has-filter': hasActiveFilter }]"
+    item-title="title"
+    item-value="value"
+    @update:model-value="onSelect"
+  >
+    <template #prepend-inner>
+      <v-icon icon="mdi-magnify" size="20" class="filter-search-icon" />
+    </template>
+    <template #item="{ item, props: itemProps }">
+      <v-list-item v-bind="itemProps" class="filter-item">
+        <template v-if="item.value?.startsWith('s:')">
+          <v-avatar
+            :image="styleCoverMap[item.value.slice(2)]"
+            size="36"
+            rounded
+            class="filter-item-avatar mr-3"
+          >
+            <v-icon v-if="!styleCoverMap[item.value.slice(2)]" icon="mdi-palette" size="20" />
+          </v-avatar>
+          <span>{{ item.title }}</span>
+        </template>
+        <template v-else-if="item.value?.startsWith('p:')">
+          <v-avatar
+            :image="avatarUrl(item.value.slice(2))"
+            size="36"
+            class="filter-item-avatar mr-3"
+          />
+          <span>{{ item.title }}</span>
+        </template>
+        <template v-else>
+          <span>{{ item.title }}</span>
+        </template>
+      </v-list-item>
+    </template>
+  </v-autocomplete>
 </template>
 
 <script setup lang="ts">
@@ -50,198 +50,103 @@ interface PainterItem {
   style: string
 }
 
-const props = defineProps<{
-  styles: string[]
-  painters: PainterItem[]
-  styleCoverMap?: Record<string, string>
-  filterStyle: string | null
-  filterPainter: string | null
-}>()
-
-const styleCoverMap = computed(() => props.styleCoverMap ?? {})
-
-function avatarUrl(name: string) {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2f3a4a&color=fff&size=64`
-}
+const props = withDefaults(
+  defineProps<{
+    styles: string[]
+    painters: PainterItem[]
+    styleCoverMap?: Record<string, string>
+    filterStyle: string | null
+    filterPainter: string | null
+    compact?: boolean
+  }>(),
+  { compact: false }
+)
 
 const emit = defineEmits<{
   'update:filterStyle': [value: string | null]
   'update:filterPainter': [value: string | null]
 }>()
 
-const expanded = ref(false)
-const modelValueStyle = computed(() => props.filterStyle)
-const modelValuePainter = computed(() => props.filterPainter)
+const styleCoverMap = computed(() => props.styleCoverMap ?? {})
 
-function onStyleClick(s: string) {
-  const next = props.filterStyle === s ? null : s
-  emit('update:filterStyle', next)
-  emit('update:filterPainter', null)
+const hasActiveFilter = computed(() => !!props.filterStyle || !!props.filterPainter)
+
+const selected = ref<string | null>(null)
+
+function avatarUrl(name: string) {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2f3a4a&color=fff&size=64`
 }
 
-function onPainterClick(p: PainterItem) {
-  const next = props.filterPainter === p.name ? null : p.name
-  emit('update:filterPainter', next)
-  if (next) emit('update:filterStyle', null)
+const searchItems = computed(() => {
+  const items: Array<{ title: string; value: string }> = []
+  for (const s of props.styles) {
+    items.push({ title: `流派：${s}`, value: `s:${s}` })
+  }
+  for (const p of props.painters) {
+    items.push({ title: `画家：${p.name}`, value: `p:${p.name}` })
+  }
+  return items
+})
+
+watch(
+  () => [props.filterStyle, props.filterPainter],
+  () => {
+    if (props.filterPainter) {
+      selected.value = `p:${props.filterPainter}`
+    } else if (props.filterStyle) {
+      selected.value = `s:${props.filterStyle}`
+    } else {
+      selected.value = null
+    }
+  },
+  { immediate: true }
+)
+
+function onSelect(val: string | null) {
+  if (!val) {
+    emit('update:filterStyle', null)
+    emit('update:filterPainter', null)
+    return
+  }
+  if (val.startsWith('s:')) {
+    emit('update:filterStyle', val.slice(2))
+    emit('update:filterPainter', null)
+  } else if (val.startsWith('p:')) {
+    emit('update:filterPainter', val.slice(2))
+    emit('update:filterStyle', null)
+  }
 }
 </script>
 
 <style scoped>
-.filter-bar {
-  padding: 0;
-  background: color-mix(in srgb, rgb(var(--v-theme-surface)) 75%, transparent) !important;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 10px;
-  margin-bottom: 20px;
+.filter-search {
+  width: 100%;
+  min-width: 280px;
+  max-width: 420px;
 }
 
-.filter-bar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  cursor: pointer;
-  min-height: 44px;
-}
-
-.filter-bar-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  opacity: 0.78;
-}
-
-.filter-bar-body {
-  padding: 0 14px 12px;
-  overflow: hidden;
-}
-
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.filter-row:first-child {
-  margin-top: 0;
-}
-
-.filter-row-label {
-  flex-shrink: 0;
-  font-size: 0.75rem;
-  opacity: 0.7;
-}
-
-.filter-style-cards {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  flex: 1;
-  min-width: 0;
-}
-
-.style-pill {
-  position: relative;
-  flex-shrink: 0;
-  min-width: 120px;
-  width: 140px;
-  aspect-ratio: 8 / 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  border-radius: 10px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.18);
-  color: rgb(var(--v-theme-on-surface));
-  cursor: pointer;
-  overflow: hidden;
+.filter-search:deep(.v-field) {
+  min-height: 48px;
+  border-radius: 14px;
+  background: color-mix(in srgb, rgb(var(--v-theme-surface)) 90%, transparent);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.style-pill:not(.has-cover) {
-  background: linear-gradient(135deg, color-mix(in srgb, rgb(var(--v-theme-surface)) 94%, transparent) 0%, color-mix(in srgb, rgb(var(--v-theme-surface)) 88%, transparent) 100%);
+.filter-search:deep(.v-field):hover,
+.filter-search.has-filter:deep(.v-field) {
+  border-color: rgba(var(--v-theme-primary), 0.4);
 }
 
-.style-pill-bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
+.filter-search-icon {
+  opacity: 0.6;
 }
 
-.style-pill-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.35) 50%, rgba(0, 0, 0, 0.2) 100%);
-  z-index: 1;
+.filter-item {
+  min-height: 48px;
 }
 
-.style-pill-text {
-  position: relative;
-  z-index: 2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90%;
-}
-
-.style-pill.has-cover:not(.active) .style-pill-text {
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-
-.style-pill.has-cover:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-.style-pill.active {
-  background: rgb(var(--v-theme-primary));
-  border-color: rgb(var(--v-theme-primary));
-}
-
-.style-pill.active .style-pill-bg,
-.style-pill.active .style-pill-overlay {
-  display: none;
-}
-
-.style-pill.active .style-pill-text {
-  color: rgb(var(--v-theme-on-primary));
-  text-shadow: none;
-}
-
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  flex: 1;
-  min-width: 0;
-}
-
-.filter-chip {
+.filter-item-avatar {
   flex-shrink: 0;
-}
-
-.filter-chip :deep(.v-chip__prepend) {
-  margin-inline-start: -4px;
-}
-
-.filter-chip :deep(.v-avatar) {
-  width: 28px !important;
-  height: 28px !important;
-}
-
-.filter-expand-enter-active,
-.filter-expand-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.filter-expand-enter-from,
-.filter-expand-leave-to {
-  opacity: 0;
 }
 </style>

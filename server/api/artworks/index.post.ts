@@ -1,5 +1,6 @@
 import { insertArtwork } from '../../utils/artworks-data'
 import type { Artwork } from '../../utils/artworks-data'
+import { getImageDimensions } from '../../utils/image-dimensions'
 import { copyFromTempToArtworks } from '../../utils/storage'
 import { randomUUID } from 'node:crypto'
 
@@ -18,6 +19,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   const imageUrl = await copyFromTempToArtworks(body.imageUrl)
+  const dims = await getImageDimensions(imageUrl)
   const newArtwork: Artwork = {
     id: randomUUID(),
     userId: 'demo',
@@ -28,6 +30,7 @@ export default defineEventHandler(async (event) => {
     likes: [],
     comments: [],
     createdAt: new Date().toISOString(),
+    ...(dims && { imageWidth: dims.width, imageHeight: dims.height }),
     ...(body.analysisResult && { analysisResult: body.analysisResult }),
   }
   return insertArtwork(newArtwork)

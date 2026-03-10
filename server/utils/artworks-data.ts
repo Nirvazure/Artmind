@@ -15,6 +15,8 @@ export interface Artwork {
   title: string
   style: string
   imageUrl: string
+  imageWidth?: number
+  imageHeight?: number
   isPublic?: boolean
   likes: string[]
   comments: { userId: string; text: string }[]

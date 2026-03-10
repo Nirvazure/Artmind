@@ -14,12 +14,12 @@
       <main class="page-main" :class="`phase-${viewPhase}`">
         <div class="content-shell">
           <section class="art-stage">
-            <div ref="frameRef" class="frame-container">
+            <div ref="frameRef" class="frame-container" :style="{ aspectRatio: frameAspectRatio }">
               <div class="frame-inner">
                 <v-img
                   v-if="displayImageSrc"
                   :src="displayImageSrc"
-                  cover
+                  contain
                   eager
                   class="frame-img"
                 />
@@ -44,12 +44,12 @@
                   <v-btn
                     color="primary"
                     variant="flat"
-                    rounded="pill"
+                    rounded="lg"
                     :loading="loading"
                     :disabled="loading || !canAnalyze"
                     prepend-icon="mdi-magnify"
-                    size="small"
-                    class="analyze-btn"
+                    size="default"
+                    class="analyze-btn analyze-btn--d"
                     @click="analyze"
                   >
                     {{ loading ? '分析中' : '分析' }}
@@ -84,9 +84,31 @@
                   </div>
                 </div>
                 <div v-else-if="result" key="result" class="glass-content">
-                  <div class="glass-section">
-                    <h3 class="glass-title">流派推测</h3>
-                    <div class="glass-chart-row">
+                  <div class="glass-section glass-section-output">
+                    <div class="glass-section-header">
+                      <h3 class="glass-title">流派推测</h3>
+                      <div v-if="result.rawLabels?.length" class="output-mode-toggle">
+                        <v-btn
+                          :variant="outputMode === 'polished' ? 'flat' : 'text'"
+                          icon="mdi-translate"
+                          size="small"
+                          density="compact"
+                          class="output-mode-btn"
+                          title="润色输出"
+                          @click="outputMode = 'polished'"
+                        />
+                        <v-btn
+                          :variant="outputMode === 'raw' ? 'flat' : 'text'"
+                          icon="mdi-code-tags"
+                          size="small"
+                          density="compact"
+                          class="output-mode-btn"
+                          title="原始输出"
+                          @click="outputMode = 'raw'"
+                        />
+                      </div>
+                    </div>
+                    <div v-show="outputMode === 'polished'" class="glass-chart-row">
                       <StyleRingChart :styles="result.styles" />
                       <div class="style-labels">
                         <div
@@ -99,11 +121,11 @@
                         </div>
                       </div>
                     </div>
-                    <div v-if="result.rawLabels?.length" class="raw-labels mt-2">
+                    <div v-show="outputMode === 'raw' && (result.rawLabels?.length ?? 0) > 0" class="raw-labels mt-2">
                       <p class="raw-labels-title">模型原始输出</p>
                       <div class="raw-labels-list">
                         <div
-                          v-for="(r, i) in result.rawLabels.slice(0, 5)"
+                          v-for="(r, i) in (result.rawLabels ?? []).slice(0, 5)"
                           :key="i"
                           class="raw-label-item"
                         >
@@ -175,10 +197,11 @@
                     <v-btn
                       color="primary"
                       size="small"
+                      :loading="savingToGallery"
                       :disabled="!canSaveToGallery"
                       @click="saveToGallery"
                     >
-                      保存到画廊
+                      {{ savingToGallery ? '保存中...' : '保存到画廊' }}
                     </v-btn>
                   </div>
                 </div>
@@ -243,8 +266,11 @@ const modelStyles = ref<string[]>([])
 const modelStylesLoaded = ref(false)
 const modelStylesLoading = ref(false)
 const inFlightAnalyzeKey = ref<string | null>(null)
+const savingToGallery = ref(false)
+const outputMode = ref<'polished' | 'raw'>('polished')
 
 const result = computed(() => {
+  if (pendingFile.value && !manualResult.value) return null
   if (manualResult.value) return manualResult.value
   if (!analyzeMode.value) return null
   const a = artwork.value
@@ -269,9 +295,24 @@ const viewPhase = computed<'idle' | 'analyzing' | 'resolved'>(() => {
   return 'idle'
 })
 
+const frameAspectRatio = computed(() => {
+  const a = artwork.value
+  if (
+    !uploadedImageUrl.value &&
+    !manualResult.value &&
+    a?.imageWidth &&
+    a?.imageHeight &&
+    a.imageWidth > 0 &&
+    a.imageHeight > 0
+  ) {
+    return a.imageWidth / a.imageHeight
+  }
+  return 4 / 3
+})
+
 const canSwitch = computed(() => artworkStore.artworks.length > 1)
 const canAnalyze = computed(() => !!pendingFile.value || !!artwork.value?.imageUrl)
-const canSaveToGallery = computed(() => !!result.value && !loading.value)
+const canSaveToGallery = computed(() => !!result.value && !loading.value && !savingToGallery.value)
 const aiTopStyle = computed(() => result.value?.styles[0]?.name?.trim() ?? '')
 const styleSelectItems = computed(() => {
   const items: Array<{ title: string; value: string }> = []
@@ -464,6 +505,7 @@ async function analyze() {
 async function saveToGallery() {
   const r = result.value
   if (!r) return
+  savingToGallery.value = true
   try {
     const normalizedPainters = normalizePaintersInput(editablePainters.value)
     const resolvedStyle = (selectedStyle.value || aiTopStyle.value || r.styles[0]?.name || '').trim()
@@ -483,9 +525,12 @@ async function saveToGallery() {
     title.value = ''
     selectedStyle.value = ''
     editablePainters.value = []
+    await new Promise<void>((resolve) => setTimeout(resolve, 150))
     await router.replace(`/${created.id}?analyse=true`)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '保存失败'
+  } finally {
+    savingToGallery.value = false
   }
 }
 
@@ -525,7 +570,7 @@ onUnmounted(() => {
 .phase-idle .content-shell { justify-content: center; }
 .phase-analyzing .art-stage, .phase-resolved .art-stage { align-items: flex-start; }
 .phase-analyzing .content-shell, .phase-resolved .content-shell { justify-content: space-between; }
-.frame-container { flex-shrink: 0; width: 100%; min-height: 240px; aspect-ratio: 4/3; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1); transform-style: preserve-3d; }
+.frame-container { flex-shrink: 0; width: 100%; min-height: 240px; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1); transform-style: preserve-3d; }
 .frame-inner { width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
 .frame-img { width: 100%; height: 100%; }
 .frame-skeleton { width: 100%; height: 100%; min-height: 240px; border-radius: inherit; background: linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 100%); background-size: 200% 100%; animation: skeleton-flow 1.4s linear infinite; }
@@ -533,6 +578,9 @@ onUnmounted(() => {
 .glass-panel { background: var(--ui-panel-bg); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); border: 1px solid var(--ui-panel-border); border-radius: 16px; padding: 24px; width: min(100%, 640px); max-height: min(80vh, 680px); overflow-y: auto; color: var(--ui-text); box-shadow: 0 20px 34px -24px rgba(0,0,0,0.68); }
 .glass-content { display: flex; flex-direction: column; gap: 18px; }
 .glass-title { font-size: 0.95rem; font-weight: 700; margin: 0 0 10px; }
+.glass-section-output { display: flex; flex-direction: column; }
+.glass-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.glass-section-header .glass-title { margin: 0; }
 .glass-title-sub { font-weight: 600; color: var(--ui-muted); }
 .glass-section { margin-bottom: 8px; }
 .glass-chart-row { display: flex; align-items: center; gap: 20px; }
@@ -570,7 +618,10 @@ onUnmounted(() => {
 .controls-actions-group { display: flex; align-items: center; gap: 8px; width: 100%; }
 .upload-btn { color: var(--ui-text) !important; border-color: var(--ui-panel-border) !important; }
 .glass-tools { width: 100%; background: rgba(8, 12, 18, 0.42); border: 1px solid var(--ui-panel-border); border-radius: 14px; padding: 12px; backdrop-filter: blur(18px); }
-.analyze-btn { min-width: 96px; }
+.analyze-btn--d:hover:not(.v-btn--disabled) { transform: scale(1.03); }
+.analyze-btn--d:active:not(.v-btn--disabled) { transform: scale(0.98); }
+.output-mode-toggle { display: flex; gap: 4px; }
+.output-mode-btn { min-width: 32px !important; min-height: 32px !important; }
 .glass-actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
 .glass-actions .glass-field { width: 100%; margin-bottom: 0; }
 .glass-actions :deep(.v-field) { border-radius: 10px; }
