@@ -5,10 +5,10 @@
       prominent
       :class="[appBarClass, 'app-bar-shell']"
     >
-      <v-icon
-        icon="mdi-palette"
-        size="28"
-        class="mr-2 appbar-logo-icon"
+      <img
+        src="/icon.png"
+        alt="ArtMind"
+        class="appbar-logo-icon mr-2"
       />
       <div class="d-flex flex-column">
         <v-toolbar-title class="font-weight-bold">
@@ -121,18 +121,20 @@ const appBarClass = computed(() =>
 
 .appbar-logo-icon {
   margin-inline-start: 4px;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
 .app-bar-home :deep(.v-btn),
 .app-bar-home :deep(.v-toolbar-title),
-.app-bar-home :deep(.v-icon),
 .app-bar-home .app-bar-subtitle {
   color: rgba(255, 255, 255, 0.94) !important;
 }
 
+
 .app-bar-default :deep(.v-btn),
 .app-bar-default :deep(.v-toolbar-title),
-.app-bar-default :deep(.v-icon),
 .app-bar-default .app-bar-subtitle {
   color: rgba(16, 22, 30, 0.94) !important;
 }
@@ -151,7 +153,6 @@ const appBarClass = computed(() =>
 /* 画廊页：接近首页幽灵风格，透明栏 + 黑字（画廊为浅色背景） */
 .layout-gallery :deep(.app-bar-shell .v-btn),
 .layout-gallery :deep(.app-bar-shell .v-toolbar-title),
-.layout-gallery :deep(.app-bar-shell .v-icon),
 .layout-gallery :deep(.app-bar-shell .app-bar-subtitle) {
   color: rgba(16, 22, 30, 0.94) !important;
 }

@@ -28,6 +28,11 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
     }
     imageUrl = body.imageUrl
     model = body.model
+    // Vercel serverless 无法读取本地文件，将相对路径转为绝对 URL 通过 HTTP 拉取
+    if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
+      const reqUrl = getRequestURL(event)
+      imageUrl = `${reqUrl.origin}${imageUrl}`
+    }
   } else {
     const formData = await readMultipartFormData(event)
     const image = formData?.find((f) => f.name === 'image')
@@ -35,9 +40,16 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
     if (!image?.data) {
       throw createError({ statusCode: 400, message: 'No image provided' })
     }
-    const ext = image.filename?.split('.').pop() ?? 'jpg'
-    const filename = `${randomUUID()}.${ext}`
-    imageUrl = await saveFile(image.data, filename)
+    try {
+      const ext = image.filename?.split('.').pop() ?? 'jpg'
+      const filename = `${randomUUID()}.${ext}`
+      imageUrl = await saveFile(image.data, filename)
+    } catch (e) {
+      throw createError({
+        statusCode: 503,
+        message: '当前部署环境不支持本地上传，请使用「换一张」选择远程图片后分析',
+      })
+    }
     model = modelField?.data?.toString()
   }
 
