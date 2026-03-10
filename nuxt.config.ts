@@ -7,6 +7,10 @@ export default defineNuxtConfig({
         maxDuration: 180,
       },
     },
+    // 强制内联 lodash，避免 ali-oss 间接依赖在 Vercel ESM 中解析 lodash/xxx 失败
+    externals: {
+      inline: ['lodash'],
+    },
   },
   app: {
     head: {
