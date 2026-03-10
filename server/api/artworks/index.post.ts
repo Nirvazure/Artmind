@@ -1,5 +1,6 @@
-import { readArtworks, writeArtworks } from '../../utils/artworks-data'
+import { insertArtwork } from '../../utils/artworks-data'
 import type { Artwork } from '../../utils/artworks-data'
+import { copyFromTempToArtworks } from '../../utils/storage'
 import { randomUUID } from 'node:crypto'
 
 export default defineEventHandler(async (event) => {
@@ -15,19 +16,17 @@ export default defineEventHandler(async (event) => {
       message: 'Missing title, style, or imageUrl',
     })
   }
-  const artworks = await readArtworks()
+  const imageUrl = await copyFromTempToArtworks(body.imageUrl)
   const newArtwork: Artwork = {
     id: randomUUID(),
     userId: 'demo',
     title: body.title,
     style: body.style,
-    imageUrl: body.imageUrl,
+    imageUrl,
     isPublic: body.isPublic ?? true,
     likes: [],
     comments: [],
     createdAt: new Date().toISOString(),
   }
-  artworks.push(newArtwork)
-  await writeArtworks(artworks)
-  return newArtwork
+  return insertArtwork(newArtwork)
 })

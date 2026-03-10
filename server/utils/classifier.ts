@@ -16,11 +16,11 @@ function mapKeremberkeLabelToStyle(label: string): string {
 /**
  * AI 分类抽象层
  * 仅使用 keremberke（Painting 服务）进行艺术流派分类
- * @param imageUrl 图片 URL 或本地路径（如 /uploads/xxx.jpg）
+ * @param imageInput 图片 Buffer 或 URL（URL 时通过 HTTP 拉取）
  * @param _model 模型名称（保留，与 engine 关联）
  */
 export async function classify(
-  imageUrl: string,
+  imageInput: Buffer | string,
   _model?: string
 ): Promise<{ styles: StylePrediction[]; topStyle: string; source: 'painting'; rawLabels?: Array<{ label: string; score: number }> }> {
   const config = useRuntimeConfig()
@@ -40,7 +40,7 @@ export async function classify(
     console.warn('[classifier] Calling Painting service:', paintingUrl)
   }
 
-  const buffer = await getImageBuffer(imageUrl)
+  const buffer = Buffer.isBuffer(imageInput) ? imageInput : await getImageBuffer(imageInput)
   const result = await callPaintingInference(buffer, paintingUrl)
 
   if (!result || result.length === 0) {

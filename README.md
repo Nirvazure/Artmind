@@ -8,7 +8,7 @@
 
 ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画廊展示与流派说明；当前使用 keremberke/yolov8m-painting-classification（HF Space）进行艺术流派分类，需配置 PAINTING_INFERENCE_URL。
 
-当前为原型阶段，使用本地 JSON 存储。功能现状与规划见下方双栏表。
+当前使用 MongoDB Atlas 存储作品数据，阿里云 OSS 存储上传图片。功能现状与规划见下方双栏表。
 
 ---
 
@@ -29,7 +29,7 @@ ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画
 |------|------|
 | 前端 | Vue 3、Nuxt 3、Vuetify 3、Pinia |
 | 后端 | Nitro（API 路由） |
-| 存储 | 本地 JSON（`server/data/`） |
+| 存储 | MongoDB Atlas（作品数据）+ 阿里云 OSS（图片） |
 | AI | Hugging Face Space（keremberke/yolov8m-painting-classification 艺术流派），需配置 PAINTING_INFERENCE_URL |
 
 ---
@@ -56,20 +56,18 @@ ArtMind/
 │   ├── api/             # API 路由
 │   │   ├── classify.post.ts
 │   │   ├── upload.post.ts
-│   │   ├── artworks/    # GET/POST/PUT
+│   │   ├── artworks/    # GET/POST/PUT（MongoDB）
 │   │   ├── painters/
 │   │   ├── models/      # GET（流派列表）
-│   │   ├── style-covers/ # GET（流派封面映射）
-│   │   └── classic-artworks/  # GET
-│   ├── data/            # JSON 数据
-│   │   ├── painters-list.json   # 画家详情（唯一画家数据源）
-│   │   └── classic-artworks.json
+│   │   └── style-covers/ # GET（流派封面映射）
+│   ├── data/            # 静态 JSON（画家）
+│   │   └── painters-list.json   # 画家详情（唯一画家数据源）
 │   ├── utils/
 │   │   ├── classifier.ts
 │   │   ├── painter-mapping.ts
 │   │   ├── storage.ts
 │   │   ├── artworks-data.ts
-│   │   ├── classic-artworks-data.ts
+│   │   ├── image-compress.ts    # 上传图片压缩
 │   │   ├── image-utils.ts      # 图片 Buffer 获取
 │   │   ├── painting-client.ts  # HF Space 推理调用
 │   │   └── styles-data.ts       # 27 流派常量
@@ -108,13 +106,41 @@ yarn dev
    ```
 3. 运行 `yarn dev`，上传图片即可使用流派分类。
 
-**可选环境变量**（Gradio Space 兼容）：
-- `PAINTING_PREDICT_PATH`：预测接口路径，默认 `/predict`
-- `PAINTING_USE_GRADIO_API`：设为 `true` 时使用 Gradio upload + predict_ui 流程
+**可选环境变量**：`PAINTING_PREDICT_PATH` — 预测接口路径，默认 `/predict`
 
-### Vercel 部署
+### 存储与部署
 
-在 Vercel 项目 Settings → Environment Variables 中设置 `PAINTING_INFERENCE_URL`（或 `NUXT_PAINTING_INFERENCE_URL`），作用环境勾选 Production、Preview。HF Space 冷启动约 2–3 分钟，已通过 maxDuration 配置适配。
+**MongoDB Atlas**：作品数据存储。环境变量 `MONGODB_URI`（或 `NUXT_MONGODB_URI`）。
+
+**阿里云 OSS**：上传图片存储。环境变量：
+- `OSS_REGION`（如 `oss-cn-hangzhou`）
+- `OSS_BUCKET`（如 `artmind`）
+- `OSS_ACCESS_KEY_ID`
+- `OSS_ACCESS_KEY_SECRET`
+
+OSS 目录结构（非根目录，按业务分前缀）：
+```
+{BUCKET}/
+├── temp/               # 分析/上传临时文件（未保存到画廊），配置生命周期自动清理
+│   └── {uuid}.{ext}
+├── artworks/           # 持久化作品图片（仅「保存到画廊」后）
+│   └── {uuid}.{ext}
+└── avatars/            # 未来：用户头像（Auth0 接入后）
+    └── {userId}.{ext}
+```
+
+**temp/ 生命周期规则**（需在 OSS 控制台配置，否则未保存图片会持续占用存储产生费用）：
+1. 登录 [OSS 管理控制台](https://oss.console.aliyun.com/)
+2. 选择 Bucket → 左侧 **数据管理** → **生命周期**
+3. 点击 **创建规则**
+4. 配置：**按前缀匹配** `temp/`；**过期天数** 1 天；**删除文件** 勾选；**启用**
+5. 规则创建后约 24 小时内生效，此后每天北京时间 8:00 执行，自动删除 temp/ 下超过 1 天的对象
+
+**上传图片自动压缩**：所有上传至 OSS 的图片（JPEG/PNG/WebP）会在服务端自动压缩至 1MB 以内，兼顾质量与存储成本。非图片或压缩失败时原样存储。
+
+未配置 OSS 时，上传接口返回 503。
+
+**Vercel 部署**：在 Vercel 项目 Settings → Environment Variables 中设置 `PAINTING_INFERENCE_URL`、`MONGODB_URI` 及上述 OSS 变量，作用环境勾选 Production、Preview。HF Space 冷启动约 2–3 分钟，已通过 maxDuration 配置适配。
 
 ---
 
@@ -146,7 +172,6 @@ git checkout <移除前的 commit> -- server/python
 | GET | `/api/painters` | 艺术家列表（含 verified） |
 | GET | `/api/models` | 流派列表（27 种艺术流派名） |
 | GET | `/api/style-covers` | 流派封面映射 |
-| GET | `/api/classic-artworks` | 经典作品列表 |
 
 ---
 
@@ -157,8 +182,8 @@ git checkout <移除前的 commit> -- server/python
 - [ ] 作品展示
 
 **后端与云**
-- [ ] MongoDB Atlas 接入
-- [ ] 阿里云 OSS 接入
+- [x] MongoDB Atlas 接入
+- [x] 阿里云 OSS 接入
 - [ ] Auth0 认证接入
 
 **AI 与部署**
