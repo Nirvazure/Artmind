@@ -7,9 +7,6 @@ export default defineNuxtConfig({
         maxDuration: 180,
       },
     },
-    rollupConfig: {
-      external: ['ali-oss'],
-    },
   },
   app: {
     head: {
@@ -34,7 +31,7 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
-  build: { transpile: ['vue-countup-v3'] },
+  build: { transpile: ['vue-countup-v3', 'ali-oss'] },
   modules: ['@pinia/nuxt', 'vuetify-nuxt-module'],
   vuetify: {
     vuetifyOptions: {
