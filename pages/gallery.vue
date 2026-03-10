@@ -1,13 +1,5 @@
 <template>
   <div class="gallery-page">
-    <GalleryFilterBar
-      v-model:filter-style="selectedStyle"
-      v-model:filter-painter="selectedPainter"
-      :styles="styles"
-      :painters="painters"
-      :style-cover-map="styleCoverMap"
-    />
-
     <!-- 作品展区 -->
     <v-sheet
       v-motion
@@ -16,7 +8,7 @@
       :initial="{ opacity: 0, y: 14 }"
       :enter="{ opacity: 1, y: 0, transition: { delay: 110, duration: 320, easing: 'ease-out' } }"
     >
-      <div class="section-body">
+      <div class="section-body" :key="`gallery-${artworkStore.artworks.length}`">
         <GalleryArtworkGrid :artworks="artworkStore.artworks" :filter-style="effectiveFilterStyle" :painters="painters" />
       </div>
     </v-sheet>
@@ -36,40 +28,17 @@ interface PainterItem {
 }
 
 const artworkStore = useArtworkStore()
+const filterStore = useGalleryFilterStore()
 
 const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')
 const painters = computed(() => paintersData.value ?? [])
 
-const { data: stylesData } = await useFetch<string[]>('/api/models')
-const styles = computed(() => stylesData.value ?? [])
-
-const selectedStyle = ref<string | null>(null)
-const selectedPainter = ref<string | null>(null)
-
-const allItems = computed(() =>
-  artworkStore.artworks.map((a: Artwork) => ({
-    id: a.id,
-    title: a.title,
-    style: a.style,
-    imageUrl: a.imageUrl,
-    likes: a.likes,
-  }))
-)
-const { data: styleCoversData } = await useFetch<Record<string, string>>('/api/style-covers')
-const styleCoverMap = computed(() => {
-  const map: Record<string, string> = { ...(styleCoversData.value ?? {}) }
-  for (const item of allItems.value) {
-    if (item.style && item.imageUrl) map[item.style] = item.imageUrl
-  }
-  return map
-})
-
 const effectiveFilterStyle = computed(() => {
-  if (selectedPainter.value) {
-    const p = painters.value.find((x) => x.name === selectedPainter.value)
+  if (filterStore.selectedPainter) {
+    const p = painters.value.find((x) => x.name === filterStore.selectedPainter)
     return p?.style ?? null
   }
-  return selectedStyle.value
+  return filterStore.selectedStyle
 })
 
 onMounted(() => {
@@ -80,9 +49,9 @@ onMounted(() => {
 <style scoped>
 .gallery-page {
   min-height: 100%;
-  padding: clamp(16px, 2.3vw, 32px);
+  padding: clamp(20px, 2.8vw, 40px);
   transition: background-color 0.3s ease, color 0.3s ease;
-  max-width: 1680px;
+  max-width: 1920px;
   margin: 0 auto;
 }
 
@@ -95,7 +64,8 @@ onMounted(() => {
 
 
 .gallery-section.m3-section {
-  padding: clamp(14px, 2vw, 24px);
+  padding: clamp(18px, 2.4vw, 28px);
+  min-height: 72px;
   background: color-mix(in srgb, rgb(var(--v-theme-surface)) 88%, transparent) !important;
 }
 
