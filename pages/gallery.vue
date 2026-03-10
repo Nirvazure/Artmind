@@ -54,14 +54,6 @@ interface PainterItem {
   verified?: boolean
 }
 
-interface ClassicArtworkItem {
-  id: string
-  title: string
-  style: string
-  painter: string
-  imageUrl: string
-}
-
 const artworkStore = useArtworkStore()
 
 const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')
@@ -70,34 +62,17 @@ const painters = computed(() => paintersData.value ?? [])
 const { data: stylesData } = await useFetch<string[]>('/api/models')
 const styles = computed(() => stylesData.value ?? [])
 
-const { data: classicData } = await useFetch<ClassicArtworkItem[]>('/api/classic-artworks')
-const classicArtworks = computed(() => classicData.value ?? [])
-
 const selectedStyle = ref<string | null>(null)
 
-const classicItems = computed(() =>
-  classicArtworks.value.map((a) => ({
-    id: a.id,
-    title: a.title,
-    style: a.style,
-    imageUrl: a.imageUrl,
-    painter: a.painter,
-    source: 'classic' as const,
-  }))
-)
-
-const userItems = computed(() =>
+const allItems = computed(() =>
   artworkStore.artworks.map((a: Artwork) => ({
     id: a.id,
     title: a.title,
     style: a.style,
     imageUrl: a.imageUrl,
     likes: a.likes,
-    source: 'user' as const,
   }))
 )
-
-const allItems = computed(() => [...classicItems.value, ...userItems.value])
 
 const { data: styleCoversData } = await useFetch<Record<string, string>>('/api/style-covers')
 const styleCoverMap = computed(() => {

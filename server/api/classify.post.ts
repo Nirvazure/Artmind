@@ -21,6 +21,7 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
     const contentType = getHeader(event, 'content-type') ?? ''
     let imageUrl: string
     let model: string | undefined
+    let imageBuffer: Buffer | undefined
 
     if (contentType.includes('application/json')) {
       const body = await readBody<{ imageUrl: string; model?: string }>(event)
@@ -41,6 +42,7 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
       if (!image?.data) {
         throw createError({ statusCode: 400, message: 'No image provided' })
       }
+      imageBuffer = Buffer.isBuffer(image.data) ? image.data : Buffer.from(image.data)
       try {
         const ext = image.filename?.split('.').pop() ?? 'jpg'
         const filename = `${randomUUID()}.${ext}`
@@ -54,7 +56,8 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
       model = modelField?.data?.toString()
     }
 
-  const result = await classify(imageUrl, model)
+  // multipart：用已有 buffer 直接推理，避免对 OSS URL 发起 HTTP 请求（私有桶会 403）
+  const result = await classify(imageBuffer ?? imageUrl, model)
   const painters = getTopPaintersByStyle(result.topStyle, 3)
     if (process.env.NODE_ENV === 'development') {
       console.warn('[classify] 完成, source:', result.source, 'imageUrl:', imageUrl.slice(0, 50))

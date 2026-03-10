@@ -37,8 +37,8 @@
 
 ### 存储
 
-- [ ] MongoDB Atlas 接入，替代 server/data/*.json
-- [ ] 阿里云 OSS 接入，替代本地图片存储
+- [x] MongoDB Atlas 接入，替代 server/data/artworks.json
+- [x] 阿里云 OSS 接入，替代本地图片存储
 
 ### 认证
 

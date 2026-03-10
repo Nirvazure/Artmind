@@ -3,11 +3,11 @@
     <div class="page-inner">
       <div
         class="page-bg-shadow"
-        :style="{ backgroundImage: `url(${displayImageSrc})` }"
+        :style="displayImageSrc ? { backgroundImage: `url(${displayImageSrc})` } : { backgroundColor: 'rgba(30, 28, 26, 0.4)' }"
       />
       <div
         class="page-bg-blur"
-        :style="{ backgroundImage: `url(${displayImageSrc})` }"
+        :style="displayImageSrc ? { backgroundImage: `url(${displayImageSrc})` } : { backgroundColor: 'rgba(40, 38, 36, 0.5)' }"
       />
       <div class="page-bg-overlay" />
 
@@ -22,11 +22,13 @@
             <div ref="frameRef" class="frame-container">
               <div class="frame-inner">
                 <v-img
+                  v-if="displayImageSrc"
                   :src="displayImageSrc"
                   cover
                   eager
                   class="frame-img"
                 />
+                <div v-else class="frame-skeleton" />
               </div>
             </div>
 
@@ -55,7 +57,7 @@
                     variant="flat"
                     rounded="pill"
                     :loading="loading"
-                    :disabled="loading"
+                    :disabled="loading || !canAnalyze"
                     prepend-icon="mdi-magnify"
                     size="small"
                     class="analyze-btn"
@@ -196,7 +198,7 @@
         rounded="lg"
         size="default"
         prepend-icon="mdi-shuffle-variant"
-        :disabled="loading"
+        :disabled="loading || galleryImageUrls.length === 0"
         @click="switchArtwork"
       >
         换一张
@@ -210,30 +212,10 @@ import VanillaTilt from 'vanilla-tilt'
 
 definePageMeta({ layout: 'home' })
 
-const parallaxImages = [
-  'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1920',
-  'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1920',
-  'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1920',
-]
-
-interface ClassicArtworkItem {
-  id: string
-  title: string
-  style: string
-  painter: string
-  imageUrl: string
-}
-
-const { data: classicData } = await useFetch<ClassicArtworkItem[]>('/api/classic-artworks')
 const artworkStore = useArtworkStore()
 
 const galleryImageUrls = computed(() => {
-  const classic = (classicData.value ?? []).map((a) => a.imageUrl)
-  const user = artworkStore.artworks
-    .filter((a) => a.isPublic)
-    .map((a) => a.imageUrl)
-  const urls = [...classic, ...user]
-  return urls.length > 0 ? urls : parallaxImages
+  return artworkStore.artworks.map((a) => a.imageUrl).filter(Boolean)
 })
 
 const galleryIndex = ref(0)
@@ -264,15 +246,11 @@ function encodeImageUrl(url: string): string {
 }
 
 const displayImageSrc = computed(() => {
-  let src: string
-  if (result.value) src = result.value.imageUrl
-  else if (uploadedImageUrl.value) src = uploadedImageUrl.value
-  else {
-    const urls = galleryImageUrls.value
-    const idx = galleryIndex.value % Math.max(1, urls.length)
-    src = urls[idx] ?? parallaxImages[0]
-  }
-  return encodeImageUrl(src)
+  if (result.value) return encodeImageUrl(result.value.imageUrl)
+  if (uploadedImageUrl.value) return uploadedImageUrl.value
+  const urls = galleryImageUrls.value
+  const idx = galleryIndex.value % Math.max(1, urls.length)
+  return urls[idx] ? encodeImageUrl(urls[idx]) : ''
 })
 
 const viewPhase = computed<'idle' | 'analyzing' | 'resolved'>(() => {
@@ -287,7 +265,12 @@ const imageToAnalyze = computed(() => {
   if (uploadedImageUrl.value) return { type: 'url' as const, url: uploadedImageUrl.value }
   const urls = galleryImageUrls.value
   const idx = galleryIndex.value % Math.max(1, urls.length)
-  return { type: 'url' as const, url: urls[idx] ?? parallaxImages[0] }
+  return { type: 'url' as const, url: urls[idx] ?? '' }
+})
+
+const canAnalyze = computed(() => {
+  const t = imageToAnalyze.value
+  return t.type === 'file' || !!t.url
 })
 
 onMounted(() => {
@@ -524,6 +507,21 @@ async function saveToGallery() {
 .frame-img {
   width: 100%;
   height: 100%;
+}
+
+.frame-skeleton {
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-flow 1.4s linear infinite;
 }
 
 .result-side {

@@ -7,6 +7,9 @@ export default defineNuxtConfig({
         maxDuration: 180,
       },
     },
+    rollupConfig: {
+      external: ['ali-oss'],
+    },
   },
   app: {
     head: {
@@ -20,9 +23,13 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/app.css'],
   runtimeConfig: {
+    mongoUri: (process.env.MONGODB_URI || '').trim(),
+    ossRegion: (process.env.OSS_REGION || '').trim(),
+    ossBucket: (process.env.OSS_BUCKET || '').trim(),
+    ossAccessKeyId: (process.env.OSS_ACCESS_KEY_ID || '').trim(),
+    ossAccessKeySecret: (process.env.OSS_ACCESS_KEY_SECRET || '').trim(),
     paintingInferenceUrl: (process.env.PAINTING_INFERENCE_URL || process.env.NUXT_PAINTING_INFERENCE_URL || '').trim(),
     paintingPredictPath: (process.env.PAINTING_PREDICT_PATH || process.env.NUXT_PAINTING_PREDICT_PATH || '/predict').trim(),
-    paintingUseGradioApi: (process.env.PAINTING_USE_GRADIO_API || process.env.NUXT_PAINTING_USE_GRADIO_API || 'false').trim().toLowerCase() === 'true',
   },
   experimental: {
     appManifest: false,
