@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prepare": "nuxt prepare",
-    "build": "nuxt build",
+    "build": "node scripts/clear-oss-ts.mjs && nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview"
