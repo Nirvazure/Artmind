@@ -47,7 +47,7 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
         const ext = image.filename?.split('.').pop() ?? 'jpg'
         const filename = `${randomUUID()}.${ext}`
         imageUrl = await saveFile(image.data, filename)
-      } catch (e) {
+      } catch {
         throw createError({
           statusCode: 503,
           message: '当前部署环境不支持本地上传，请使用「换一张」选择远程图片后分析',

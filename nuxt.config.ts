@@ -37,7 +37,7 @@ export default defineNuxtConfig({
     appManifest: false,
   },
   build: { transpile: ['vue-countup-v3'] },
-  modules: ['@pinia/nuxt', 'vuetify-nuxt-module'],
+  modules: ['@nuxt/eslint', '@pinia/nuxt', 'vuetify-nuxt-module'],
   vuetify: {
     vuetifyOptions: {
       theme: {

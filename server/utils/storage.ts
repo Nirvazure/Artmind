@@ -48,7 +48,6 @@ export async function saveFile(
  * @returns artworks 的新 URL，若不是本桶 temp URL 则返回原 URL
  */
 export async function copyFromTempToArtworks(tempUrl: string): Promise<string> {
-  const config = useRuntimeConfig()
   const baseUrl = getBaseUrl()
   if (!tempUrl.startsWith(baseUrl + '/temp/')) {
     return tempUrl

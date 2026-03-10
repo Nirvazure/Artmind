@@ -44,6 +44,24 @@ function avatarUrl(name: string) {
   gap: 12px;
 }
 
+@media (min-width: 960px) {
+  .painter-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 959px) {
+  .painter-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .painter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .painter-pill {
   display: flex;
   flex-direction: column;

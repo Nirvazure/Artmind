@@ -1,5 +1,5 @@
 <template>
-  <v-app :class="['home-layout', { 'layout-gallery': route.path === '/gallery' }]">
+  <v-app :class="['home-layout', { 'layout-gallery': route.path.startsWith('/gallery') }]">
     <v-app-bar
       elevation="0"
       prominent
@@ -9,7 +9,7 @@
         src="/icon.png"
         alt="ArtMind"
         class="appbar-logo-icon mr-2"
-      />
+      >
       <div class="d-flex flex-column">
         <v-toolbar-title class="font-weight-bold">
           ArtMind
@@ -18,7 +18,7 @@
       </div>
       <v-spacer />
       <v-btn
-        v-if="route.path !== '/'"
+        v-if="route.path.startsWith('/gallery')"
         :to="'/'"
         variant="text"
         class="text-none"
@@ -26,7 +26,7 @@
         Home
       </v-btn>
       <v-btn
-        v-if="route.path === '/'"
+        v-else
         :to="'/gallery'"
         variant="text"
         class="text-none"
@@ -45,10 +45,15 @@
 
 <script setup lang="ts">
 const route = useRoute()
-const isHome = computed(() => route.path === '/')
+const isArtworkDetail = computed(() => {
+  if (route.path === '/' || route.path === '/gallery') return false
+  const segments = route.path.split('/').filter(Boolean)
+  return segments.length === 1
+})
+const isHome = computed(() => route.path === '/' || isArtworkDetail.value)
 const mainClass = computed(() => (isHome.value ? 'pa-0 home-main' : 'default-main'))
 const appBarClass = computed(() =>
-  route.path === '/'
+  route.path === '/' || isArtworkDetail.value
     ? 'app-bar-ghost app-bar-home'
     : 'app-bar-ghost app-bar-default'
 )
@@ -143,6 +148,21 @@ const appBarClass = computed(() =>
   font-size: 0.75rem;
   opacity: 0.82;
   line-height: 1.2;
+}
+
+@media (max-width: 599px) {
+  .app-bar-shell :deep(.v-toolbar__content) {
+    padding-inline-start: 12px;
+  }
+
+  .appbar-logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .app-bar-subtitle {
+    display: none;
+  }
 }
 
 .layout-gallery {

@@ -1,50 +1,31 @@
 <template>
   <div class="gallery-page">
-    <!-- 流派展区 -->
+    <GalleryFilterBar
+      v-model:filter-style="selectedStyle"
+      v-model:filter-painter="selectedPainter"
+      :styles="styles"
+      :painters="painters"
+      :style-cover-map="styleCoverMap"
+    />
+
+    <!-- 作品展区 -->
     <v-sheet
-      class="section m3-section mb-8"
-      variant="flat"
       v-motion
+      class="gallery-section m3-section"
+      variant="flat"
       :initial="{ opacity: 0, y: 14 }"
       :enter="{ opacity: 1, y: 0, transition: { delay: 110, duration: 320, easing: 'ease-out' } }"
     >
-      <div class="section-head">
-        <div>
-          <h2 class="section-title">流派说明</h2>
-          <p class="section-subtitle">AI 可识别的 27 种艺术流派</p>
-        </div>
-      </div>
-      <v-divider class="section-divider" />
       <div class="section-body">
-        <GalleryStyleStrip v-model="selectedStyle" :styles="styles" :style-cover-map="styleCoverMap" />
-      </div>
-    </v-sheet>
-
-    <!-- 艺术家展区 -->
-    <v-sheet
-      class="section m3-section mb-8"
-      variant="flat"
-      v-motion
-      :initial="{ opacity: 0, y: 14 }"
-      :enter="{ opacity: 1, y: 0, transition: { delay: 150, duration: 320, easing: 'ease-out' } }"
-    >
-      <div class="section-head">
-        <div>
-          <h2 class="section-title">艺术家名录</h2>
-          <p class="section-subtitle">画廊收录的艺术家</p>
-        </div>
-      </div>
-      <v-divider class="section-divider" />
-      <div class="section-body">
-        <GalleryPainterMarquee :painters="painters" />
+        <GalleryArtworkGrid :artworks="artworkStore.artworks" :filter-style="effectiveFilterStyle" :painters="painters" />
       </div>
     </v-sheet>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'home' })
 import type { Artwork } from '~/stores/artwork'
+definePageMeta({ layout: 'home' })
 
 interface PainterItem {
   name: string
@@ -63,6 +44,7 @@ const { data: stylesData } = await useFetch<string[]>('/api/models')
 const styles = computed(() => stylesData.value ?? [])
 
 const selectedStyle = ref<string | null>(null)
+const selectedPainter = ref<string | null>(null)
 
 const allItems = computed(() =>
   artworkStore.artworks.map((a: Artwork) => ({
@@ -73,7 +55,6 @@ const allItems = computed(() =>
     likes: a.likes,
   }))
 )
-
 const { data: styleCoversData } = await useFetch<Record<string, string>>('/api/style-covers')
 const styleCoverMap = computed(() => {
   const map: Record<string, string> = { ...(styleCoversData.value ?? {}) }
@@ -81,6 +62,14 @@ const styleCoverMap = computed(() => {
     if (item.style && item.imageUrl) map[item.style] = item.imageUrl
   }
   return map
+})
+
+const effectiveFilterStyle = computed(() => {
+  if (selectedPainter.value) {
+    const p = painters.value.find((x) => x.name === selectedPainter.value)
+    return p?.style ?? null
+  }
+  return selectedStyle.value
 })
 
 onMounted(() => {
@@ -93,43 +82,25 @@ onMounted(() => {
   min-height: 100%;
   padding: clamp(16px, 2.3vw, 32px);
   transition: background-color 0.3s ease, color 0.3s ease;
-  max-width: 1400px;
+  max-width: 1680px;
   margin: 0 auto;
 }
 
+@media (max-width: 599px) {
+  .gallery-page {
+    padding: 12px 16px;
+  }
+}
 
 
-.m3-section {
+
+.gallery-section.m3-section {
   padding: clamp(14px, 2vw, 24px);
   background: color-mix(in srgb, rgb(var(--v-theme-surface)) 88%, transparent) !important;
-
-}
-
-.section-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.section-subtitle {
-  margin: 4px 0 0;
-  font-size: 0.9rem;
-  opacity: 0.78;
-}
-
-.section-divider {
-  margin: 14px 0 16px;
 }
 
 .section-body {
   min-height: 64px;
-}
-
-.section-title {
-  font-size: clamp(1.05rem, 1.4vw, 1.35rem);
-  font-weight: 600;
-  margin-bottom: 18px;
 }
 
 /* Theme: Dark */

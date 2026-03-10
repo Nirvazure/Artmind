@@ -2,6 +2,8 @@
 
 最懂你的 AI 绘画分析引擎。上传画作图片，获取风格分类、可能画家与多维度分析，并浏览画廊中的艺术作品。
 
+
+
 ---
 
 ## 项目简介
@@ -16,8 +18,8 @@ ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画
 
 | 当前实现 | 规划中 |
 |----------|--------|
-| **首页**：视差背景、分析/上传、换一张、流派说明 | — |
-| **分析结果**：流派 + 置信度、StyleRingChart、可能画家卡片、**模型原始输出**、保存到画廊 | — |
+| **首页路由**：`/` 自动重定向到随机作品 `/:id`，默认浏览态（画作居中） | — |
+| **分析模式**：`/:id?analyse=true` 自动展示/补全 `analysisResult`，支持上传、手动分析、修正真实流派/画家并保存到画廊 | — |
 | **画廊**：流派展区、艺术家名录（含认证标识） | 作品展示、作品编辑 |
 | **流派说明**：AI 可识别的 27 种艺术流派列表 | — |
 
@@ -50,7 +52,8 @@ ArtMind/
 ├── layouts/
 │   └── home.vue
 ├── pages/
-│   ├── index.vue        # 首页 + 分析
+│   ├── index.vue        # 入口页（重定向到随机 /:id）
+│   ├── [id].vue         # 作品页（浏览态 + analyse=true 分析态）
 │   └── gallery.vue      # 画廊（含流派说明、艺术家名录）
 ├── server/
 │   ├── api/             # API 路由
@@ -92,6 +95,18 @@ yarn dev
 ```
 
 访问 http://localhost:3000
+
+在线推理地址 https://huggingface.co/spaces/YQYDarkrai/artmind_gradio
+
+MongoDB Cluster地址 https://cloud.mongodb.com/v2/69af790af0f890256658c274#/clusters/detail/artmind
+
+### 构建与检查
+
+```bash
+npm run build
+```
+
+当前 `package.json` 暂无 `lint` 脚本；如需统一校验，请补充 `lint`（例如 `vue-tsc --noEmit` + ESLint）。
 
 ---
 
