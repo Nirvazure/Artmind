@@ -1,12 +1,10 @@
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
+import classicArtworksData from '../../data/classic-artworks.json'
 import { STYLE_COVER_URLS } from '../../utils/styles-data'
 
-export default defineEventHandler(async () => {
-  const dataPath = path.join(process.cwd(), 'server', 'data', 'classic-artworks.json')
-  const data = await readFile(dataPath, 'utf-8').catch(() => '[]')
-  const classic = JSON.parse(data) as Array<{ style: string; imageUrl: string }>
+/** 编译时导入，确保 Vercel 等 serverless 环境下可用 */
+const classic = classicArtworksData as Array<{ style: string; imageUrl: string }>
 
+export default defineEventHandler(() => {
   const map: Record<string, string> = {}
   for (const item of classic) {
     if (item.style && item.imageUrl && !map[item.style]) {

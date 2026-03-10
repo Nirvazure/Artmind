@@ -1,5 +1,4 @@
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
+import paintersListData from '../../data/painters-list.json'
 
 export interface PainterItem {
   name: string
@@ -7,8 +6,7 @@ export interface PainterItem {
   verified?: boolean
 }
 
-export default defineEventHandler(async (): Promise<PainterItem[]> => {
-  const dataPath = path.join(process.cwd(), 'server', 'data', 'painters-list.json')
-  const data = await readFile(dataPath, 'utf-8').catch(() => '[]')
-  return JSON.parse(data)
-})
+/** 编译时导入，确保 Vercel 等 serverless 环境下可用 */
+const list = paintersListData as Array<{ name: string; style: string; verified?: boolean }>
+
+export default defineEventHandler((): PainterItem[] => list)

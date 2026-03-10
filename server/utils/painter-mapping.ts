@@ -1,34 +1,26 @@
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import paintersListData from '../data/painters-list.json'
 
-let cache: Map<string, string[]> | null = null
+/** 编译时导入，确保 Vercel 等 serverless 环境下可用 */
+const list = paintersListData as Array<{ name: string; style: string }>
+const cache = new Map<string, string[]>()
+for (const p of list) {
+  const style = (p.style ?? '').trim()
+  if (!style) continue
+  const names = cache.get(style) ?? []
+  if (!names.includes(p.name)) names.push(p.name)
+  cache.set(style, names)
+}
 
-async function loadCache(): Promise<Map<string, string[]>> {
-  if (cache) return cache
-  const dataPath = join(process.cwd(), 'server', 'data', 'painters-list.json')
-  const raw = await readFile(dataPath, 'utf-8')
-  const list = JSON.parse(raw) as Array<{ name: string; style: string }>
-  cache = new Map<string, string[]>()
-  for (const p of list) {
-    const style = (p.style ?? '').trim()
-    if (!style) continue
-    const names = cache.get(style) ?? []
-    if (!names.includes(p.name)) names.push(p.name)
-    cache.set(style, names)
-  }
+function loadCache(): Map<string, string[]> {
   return cache
 }
 
-export async function getPaintersByStyle(style: string): Promise<string[]> {
-  const map = await loadCache()
+export function getPaintersByStyle(style: string): string[] {
+  const map = loadCache()
   const normalized = style.trim()
   return map.get(normalized) ?? map.get(style) ?? []
 }
 
-export async function getTopPaintersByStyle(
-  style: string,
-  n: number
-): Promise<string[]> {
-  const list = await getPaintersByStyle(style)
-  return list.slice(0, n)
+export function getTopPaintersByStyle(style: string, n: number): string[] {
+  return getPaintersByStyle(style).slice(0, n)
 }

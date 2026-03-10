@@ -21,5 +21,12 @@ export async function readArtworks(): Promise<Artwork[]> {
 }
 
 export async function writeArtworks(artworks: Artwork[]): Promise<void> {
-  await writeFile(DATA_PATH, JSON.stringify(artworks, null, 2), 'utf-8')
+  try {
+    await writeFile(DATA_PATH, JSON.stringify(artworks, null, 2), 'utf-8')
+  } catch (e) {
+    // Vercel 等 serverless 环境为只读，写入会失败，仅记录不抛出
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[artworks-data] writeArtworks failed:', (e as Error).message)
+    }
+  }
 }

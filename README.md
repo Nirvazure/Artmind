@@ -112,6 +112,10 @@ yarn dev
 - `PAINTING_PREDICT_PATH`：预测接口路径，默认 `/predict`
 - `PAINTING_USE_GRADIO_API`：设为 `true` 时使用 Gradio upload + predict_ui 流程
 
+### Vercel 部署
+
+在 Vercel 项目 Settings → Environment Variables 中设置 `PAINTING_INFERENCE_URL`（或 `NUXT_PAINTING_INFERENCE_URL`），作用环境勾选 Production、Preview。HF Space 冷启动约 2–3 分钟，已通过 maxDuration 配置适配。
+
 ---
 
 ## 已移除模块：server/python

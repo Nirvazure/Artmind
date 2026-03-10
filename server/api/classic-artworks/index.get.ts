@@ -1,5 +1,4 @@
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
+import classicArtworksData from '../../data/classic-artworks.json'
 
 export interface ClassicArtwork {
   id: string
@@ -9,8 +8,7 @@ export interface ClassicArtwork {
   imageUrl: string
 }
 
-export default defineEventHandler(async (): Promise<ClassicArtwork[]> => {
-  const dataPath = path.join(process.cwd(), 'server', 'data', 'classic-artworks.json')
-  const data = await readFile(dataPath, 'utf-8').catch(() => '[]')
-  return JSON.parse(data)
-})
+/** 编译时导入，确保 Vercel 等 serverless 环境下可用 */
+const list = classicArtworksData as ClassicArtwork[]
+
+export default defineEventHandler((): ClassicArtwork[] => list)

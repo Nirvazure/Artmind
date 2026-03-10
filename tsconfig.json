@@ -1,16 +1,6 @@
 {
+  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "jsx": "preserve",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "types": ["@nuxt/schema"]
-  },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.vue"]
+    "types": ["node"]
+  }
 }
