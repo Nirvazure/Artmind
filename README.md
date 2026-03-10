@@ -6,9 +6,9 @@
 
 ## 项目简介
 
-ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画廊展示与模型管理界面；阶段一已完成瀑布流、艺术家筛选、作品删除及模型持久化。
+ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画廊展示与流派说明；当前使用 keremberke/yolov8m-painting-classification（HF Space）进行艺术流派分类，需配置 PAINTING_INFERENCE_URL。
 
-当前为原型阶段，使用本地 JSON 存储；AI 分类已接入 Hugging Face（router 新端点）与 Replicate，未配置 Token 时回退 Mock。**注意**：当前使用的 HF/Replicate 模型为通用 ImageNet 物体分类（如 comic book、sandbar），非艺术流派分类，映射到流派后结果仅供参考。功能现状与规划见下方双栏表。
+当前为原型阶段，使用本地 JSON 存储。功能现状与规划见下方双栏表。
 
 ---
 
@@ -18,7 +18,7 @@ ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画
 |----------|--------|
 | **首页**：视差背景、分析/上传、换一张、流派说明 | — |
 | **分析结果**：流派 + 置信度、StyleRingChart、可能画家卡片、**模型原始输出**、保存到画廊 | — |
-| **画廊**：Hero 轮播、艺术家名录（Marquee，含认证标识）、瀑布流、艺术家筛选、作品删除 | 作品编辑 |
+| **画廊**：流派展区、艺术家名录（含认证标识） | 作品展示、作品编辑 |
 | **流派说明**：AI 可识别的 27 种艺术流派列表 | — |
 
 ---
@@ -30,7 +30,7 @@ ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画
 | 前端 | Vue 3、Nuxt 3、Vuetify 3、Pinia |
 | 后端 | Nitro（API 路由） |
 | 存储 | 本地 JSON（`server/data/`） |
-| AI | Hugging Face Space（keremberke/yolov8m-painting-classification 艺术流派）或 Replicate；未配置时 Mock |
+| AI | Hugging Face Space（keremberke/yolov8m-painting-classification 艺术流派），需配置 PAINTING_INFERENCE_URL |
 
 ---
 
@@ -48,20 +48,19 @@ ArtMind/
 ├── composables/
 │   └── useClassifier.ts
 ├── layouts/
-│   ├── default.vue
 │   └── home.vue
 ├── pages/
 │   ├── index.vue        # 首页 + 分析
-│   ├── gallery.vue      # 画廊
-│   └── engine.vue       # 流派说明
+│   └── gallery.vue      # 画廊（含流派说明、艺术家名录）
 ├── server/
 │   ├── api/             # API 路由
 │   │   ├── classify.post.ts
 │   │   ├── upload.post.ts
-│   │   ├── artworks/    # GET/POST/PUT/DELETE
+│   │   ├── artworks/    # GET/POST/PUT
 │   │   ├── painters/
 │   │   ├── models/      # GET（流派列表）
-│   │   └── classic-artworks/  # GET/DELETE
+│   │   ├── style-covers/ # GET（流派封面映射）
+│   │   └── classic-artworks/  # GET
 │   ├── data/            # JSON 数据
 │   │   ├── painters-list.json   # 画家详情（唯一画家数据源）
 │   │   └── classic-artworks.json
@@ -71,7 +70,8 @@ ArtMind/
 │   │   ├── storage.ts
 │   │   ├── artworks-data.ts
 │   │   ├── classic-artworks-data.ts
-│   │   ├── hf-client.ts
+│   │   ├── image-utils.ts      # 图片 Buffer 获取
+│   │   ├── painting-client.ts  # HF Space 推理调用
 │   │   └── styles-data.ts       # 27 流派常量
 ├── stores/
 │   └── artwork.ts
@@ -97,11 +97,9 @@ yarn dev
 
 ---
 
-## AI 风格分类配置（可选）
+## AI 风格分类配置
 
 当前使用 **Hugging Face Space** 部署 keremberke/yolov8m-painting-classification（27 种艺术流派）。本地 Python 推理服务（`server/python`）已移除，见下方「已移除模块」说明。
-
-### 方案 0：Hugging Face Space（推荐）
 
 1. 部署 HF Space 或使用已有 Space URL
 2. 在 `.env` 添加：
@@ -110,24 +108,9 @@ yarn dev
    ```
 3. 运行 `yarn dev`，上传图片即可使用流派分类。
 
-### 方案 A：Replicate（ImageNet 物体识别，非流派）
-
-1. 在 [Replicate](https://replicate.com/account/api-tokens) 创建 API Token
-2. 在项目根目录 `.env` 添加：
-   ```
-   REPLICATE_API_TOKEN=r8_xxxxxxxxxxxxxxxx
-   ```
-3. 使用模型：`bfirsh/resnet`（ResNet-50 ImageNet，约 $0.002/次）
-
-### 方案 B：Hugging Face（免费额度）
-
-**旧端点** `api-inference.huggingface.co` 已 410 弃用，需使用 **router** 新端点。
-
-1. [Hugging Face Tokens](https://huggingface.co/settings/tokens)，勾选 **Inference Providers**
-2. `.env` 添加：`HUGGINGFACE_TOKEN=hf_xxx`
-3. （可选）`HF_MODEL_ID=其他模型ID`，默认 `microsoft/resnet-50`
-
-**当前限制**：HF 上可用的图像分类模型多为 ImageNet 通用物体识别，非艺术流派。输出需经 `HF_TO_STYLE` 映射，结果仅供参考。未配置 Painting 服务或 HF/Replicate Token 时，分析接口将返回 Mock 结果。
+**可选环境变量**（Gradio Space 兼容）：
+- `PAINTING_PREDICT_PATH`：预测接口路径，默认 `/predict`
+- `PAINTING_USE_GRADIO_API`：设为 `true` 时使用 Gradio upload + predict_ui 流程
 
 ---
 
@@ -144,7 +127,6 @@ yarn dev
 ```bash
 git checkout <移除前的 commit> -- server/python
 ```
-并恢复 `package.json` 中的 `painting:serve` 脚本。
 
 ---
 
@@ -157,19 +139,18 @@ git checkout <移除前的 commit> -- server/python
 | GET | `/api/artworks` | 获取作品列表 |
 | POST | `/api/artworks` | 新增作品 |
 | PUT | `/api/artworks/:id` | 更新作品（如 likes） |
-| DELETE | `/api/artworks/:id` | 删除用户作品 |
 | GET | `/api/painters` | 艺术家列表（含 verified） |
 | GET | `/api/models` | 流派列表（27 种艺术流派名） |
+| GET | `/api/style-covers` | 流派封面映射 |
 | GET | `/api/classic-artworks` | 经典作品列表 |
-| DELETE | `/api/classic-artworks/:id` | 删除经典作品 |
 
 ---
 
 ## 路线图 / 待接入
 
 **前端与数据**
-- [x] 画廊：瀑布流、艺术家筛选、作品删除
-- [x] 流派说明页（27 流派，替代原模型管理）
+- [x] 画廊：流派展区、艺术家名录
+- [ ] 作品展示
 
 **后端与云**
 - [ ] MongoDB Atlas 接入
@@ -177,8 +158,8 @@ git checkout <移除前的 commit> -- server/python
 - [ ] Auth0 认证接入
 
 **AI 与部署**
-- [x] Hugging Face Space（keremberke 艺术流派）+ Replicate 接入，原始输出展示
-- [x] `server/python` 已移除（改用 HF，见 TODO）
+- [x] Hugging Face Space（keremberke 艺术流派），原始输出展示
+- [x] `server/python` 已移除（改用 HF Space）
 - [ ] 若需自建推理：可从 git 恢复 `server/python` 或拆出独立服务
 
 ---

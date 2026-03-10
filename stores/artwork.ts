@@ -33,10 +33,6 @@ export const useArtworkStore = defineStore('artwork', {
       this.artworks.unshift(created)
       return created
     },
-    async deleteArtwork(id: string) {
-      await $fetch(`/api/artworks/${id}`, { method: 'DELETE' })
-      this.artworks = this.artworks.filter((a) => a.id !== id)
-    },
     async toggleLike(id: string) {
       const artwork = this.artworks.find((a) => a.id === id)
       if (!artwork) return

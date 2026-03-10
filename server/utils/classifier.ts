@@ -1,4 +1,4 @@
-import { getImageBuffer } from './hf-client'
+import { getImageBuffer } from './image-utils'
 import { callPaintingInference } from './painting-client'
 import { KEREMBERKE_TO_STYLE } from './styles-data'
 
@@ -32,7 +32,7 @@ export async function classify(
   if (!paintingUrl) {
     throw createError({
       statusCode: 503,
-      message: '未配置 PAINTING_INFERENCE_URL。请本地运行 npm run painting:serve 或部署 HF Space 后设置',
+      message: '未配置 PAINTING_INFERENCE_URL。请部署 HF Space 后设置',
     })
   }
 
