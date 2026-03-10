@@ -1,6 +1,13 @@
-import { MongoClient, ObjectId } from 'mongodb'
+import type { ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb'
 
 const COLLECTION = 'artworks'
+
+export interface ArtworkAnalysisResult {
+  styles: { name: string; confidence: number }[]
+  painters: string[]
+  rawLabels?: Array<{ label: string; score: number }>
+}
 
 export interface Artwork {
   id: string
@@ -12,6 +19,7 @@ export interface Artwork {
   likes: string[]
   comments: { userId: string; text: string }[]
   createdAt: string
+  analysisResult?: ArtworkAnalysisResult
 }
 
 interface ArtworkDoc extends Artwork {
@@ -44,6 +52,16 @@ export async function getArtworks(): Promise<Artwork[]> {
   }
 }
 
+export async function getArtworkById(id: string): Promise<Artwork | null> {
+  const { client, col } = await getCollection()
+  try {
+    const doc = await col.findOne({ id })
+    return doc ? docToArtwork(doc) : null
+  } finally {
+    await client.close()
+  }
+}
+
 export async function insertArtwork(artwork: Artwork): Promise<Artwork> {
   const { client, col } = await getCollection()
   try {
@@ -57,12 +75,13 @@ export async function insertArtwork(artwork: Artwork): Promise<Artwork> {
 
 export async function updateArtwork(
   id: string,
-  update: { likes?: string[] }
+  update: { likes?: string[]; analysisResult?: ArtworkAnalysisResult }
 ): Promise<Artwork | null> {
   const { client, col } = await getCollection()
   try {
     const set: Partial<ArtworkDoc> = {}
     if (update.likes !== undefined) set.likes = update.likes
+    if (update.analysisResult !== undefined) set.analysisResult = update.analysisResult
     const result = await col.findOneAndUpdate(
       { id },
       { $set: set },

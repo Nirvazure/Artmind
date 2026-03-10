@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
     style: string
     imageUrl: string
     isPublic?: boolean
+    analysisResult?: import('../../utils/artworks-data').ArtworkAnalysisResult
   }>(event)
   if (!body?.title || !body?.style || !body?.imageUrl) {
     throw createError({
@@ -27,6 +28,7 @@ export default defineEventHandler(async (event) => {
     likes: [],
     comments: [],
     createdAt: new Date().toISOString(),
+    ...(body.analysisResult && { analysisResult: body.analysisResult }),
   }
   return insertArtwork(newArtwork)
 })

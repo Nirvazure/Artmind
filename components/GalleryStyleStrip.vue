@@ -1,8 +1,10 @@
 <template>
   <div class="style-grid">
-    <button v-for="style in styles" :key="style" type="button" class="style-pill"
+    <button
+v-for="style in styles" :key="style" type="button" class="style-pill"
       :class="{ active: modelValue === style, 'has-cover': !!styleCoverMap?.[style] }" @click="onClick(style)">
-      <span v-if="styleCoverMap?.[style]" class="style-pill-bg"
+      <span
+v-if="styleCoverMap?.[style]" class="style-pill-bg"
         :style="{ backgroundImage: `url(${styleCoverMap[style]})` }" />
       <span v-if="styleCoverMap?.[style]" class="style-pill-overlay" />
       <span class="style-pill-text">{{ style }}</span>
@@ -23,10 +25,6 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | null]
 }>()
 
-function clearSelection() {
-  emit('update:modelValue', null)
-}
-
 function onClick(style: string) {
   if (props.modelValue === style) {
     emit('update:modelValue', null)
@@ -41,6 +39,30 @@ function onClick(style: string) {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+
+@media (min-width: 960px) {
+  .style-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 959px) {
+  .style-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 360px) and (max-width: 599px) {
+  .style-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 359px) {
+  .style-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .style-pill {

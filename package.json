@@ -6,18 +6,20 @@
     "prepare": "nuxt prepare",
     "build": "node scripts/clear-oss-ts.mjs && nuxt build",
     "dev": "nuxt dev",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "generate": "nuxt generate",
     "preview": "nuxt preview"
   },
   "dependencies": {
-    "ali-oss": "^6.20.0",
-    "sharp": "^0.33.0",
     "@pinia/nuxt": "^0.5.4",
-    "mongodb": "^6.0.0",
     "@vueuse/motion": "^3.0.3",
+    "ali-oss": "^6.20.0",
     "chart.js": "^4.5.1",
+    "mongodb": "^6.0.0",
     "nuxt": "^3.14.0",
     "pinia": "^2.2.4",
+    "sharp": "^0.33.0",
     "vanilla-tilt": "^1.8.1",
     "vue": "^3.5.12",
     "vue-chartjs": "^5.3.3",
@@ -26,7 +28,9 @@
     "vuetify-nuxt-module": "^0.19.5"
   },
   "devDependencies": {
+    "@nuxt/eslint": "^1.15.2",
     "@types/node": "^22.10.0",
+    "eslint": "^9.39.4",
     "typescript": "^5.6.3",
     "vue-tsc": "^2.1.6"
   }
