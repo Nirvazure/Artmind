@@ -14,55 +14,67 @@ export interface ClassifyResult {
 }
 
 export default defineEventHandler(async (event): Promise<ClassifyResult> => {
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[classify] API 被调用')
-  }
-  const contentType = getHeader(event, 'content-type') ?? ''
-  let imageUrl: string
-  let model: string | undefined
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[classify] API 被调用')
+    }
+    const contentType = getHeader(event, 'content-type') ?? ''
+    let imageUrl: string
+    let model: string | undefined
 
-  if (contentType.includes('application/json')) {
-    const body = await readBody<{ imageUrl: string; model?: string }>(event)
-    if (!body?.imageUrl) {
-      throw createError({ statusCode: 400, message: 'No imageUrl provided' })
+    if (contentType.includes('application/json')) {
+      const body = await readBody<{ imageUrl: string; model?: string }>(event)
+      if (!body?.imageUrl) {
+        throw createError({ statusCode: 400, message: 'No imageUrl provided' })
+      }
+      imageUrl = body.imageUrl
+      model = body.model
+      // Vercel serverless 无法读取本地文件，将相对路径转为绝对 URL 通过 HTTP 拉取
+      if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
+        const reqUrl = getRequestURL(event)
+        imageUrl = `${reqUrl.origin}${imageUrl}`
+      }
+    } else {
+      const formData = await readMultipartFormData(event)
+      const image = formData?.find((f) => f.name === 'image')
+      const modelField = formData?.find((f) => f.name === 'model')
+      if (!image?.data) {
+        throw createError({ statusCode: 400, message: 'No image provided' })
+      }
+      try {
+        const ext = image.filename?.split('.').pop() ?? 'jpg'
+        const filename = `${randomUUID()}.${ext}`
+        imageUrl = await saveFile(image.data, filename)
+      } catch (e) {
+        throw createError({
+          statusCode: 503,
+          message: '当前部署环境不支持本地上传，请使用「换一张」选择远程图片后分析',
+        })
+      }
+      model = modelField?.data?.toString()
     }
-    imageUrl = body.imageUrl
-    model = body.model
-    // Vercel serverless 无法读取本地文件，将相对路径转为绝对 URL 通过 HTTP 拉取
-    if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
-      const reqUrl = getRequestURL(event)
-      imageUrl = `${reqUrl.origin}${imageUrl}`
-    }
-  } else {
-    const formData = await readMultipartFormData(event)
-    const image = formData?.find((f) => f.name === 'image')
-    const modelField = formData?.find((f) => f.name === 'model')
-    if (!image?.data) {
-      throw createError({ statusCode: 400, message: 'No image provided' })
-    }
-    try {
-      const ext = image.filename?.split('.').pop() ?? 'jpg'
-      const filename = `${randomUUID()}.${ext}`
-      imageUrl = await saveFile(image.data, filename)
-    } catch (e) {
-      throw createError({
-        statusCode: 503,
-        message: '当前部署环境不支持本地上传，请使用「换一张」选择远程图片后分析',
-      })
-    }
-    model = modelField?.data?.toString()
-  }
 
   const result = await classify(imageUrl, model)
-  const painters = await getTopPaintersByStyle(result.topStyle, 3)
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[classify] 完成, source:', result.source, 'imageUrl:', imageUrl.slice(0, 50))
-  }
-  return {
-    styles: result.styles,
-    painters,
-    imageUrl,
-    source: result.source,
-    rawLabels: result.rawLabels,
+  const painters = getTopPaintersByStyle(result.topStyle, 3)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[classify] 完成, source:', result.source, 'imageUrl:', imageUrl.slice(0, 50))
+    }
+    return {
+      styles: result.styles,
+      painters,
+      imageUrl,
+      source: result.source,
+      rawLabels: result.rawLabels,
+    }
+  } catch (e) {
+    const err = e as Error & { statusCode?: number }
+    if (err?.statusCode && err.statusCode >= 400) {
+      throw e
+    }
+    console.error('[classify]', err)
+    throw createError({
+      statusCode: 503,
+      message: '分类服务异常，请查看服务端日志或检查 PAINTING_INFERENCE_URL 配置',
+    })
   }
 })
