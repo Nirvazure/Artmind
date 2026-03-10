@@ -1,4 +1,4 @@
-import paintersListData from '../../data/painters-list.json'
+import { paintersListData } from '../../data/painters-list'
 
 export interface PainterItem {
   name: string
@@ -6,7 +6,6 @@ export interface PainterItem {
   verified?: boolean
 }
 
-/** 编译时导入，确保 Vercel 等 serverless 环境下可用 */
-const list = paintersListData as Array<{ name: string; style: string; verified?: boolean }>
+const list = paintersListData
 
 export default defineEventHandler((): PainterItem[] => list)

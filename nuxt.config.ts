@@ -7,7 +7,9 @@ export default defineNuxtConfig({
         maxDuration: 180,
       },
     },
-    // 强制内联 lodash，避免 ali-oss 间接依赖在 Vercel ESM 中解析 lodash/xxx 失败
+    // 开发模式：ali-oss 不打包，避免 debug 等依赖在 dev 下被错误内联导致 require$$0$5 is not a function
+    // 生产模式：ali-oss 随构建打包（配合 scripts/clear-oss-ts.mjs），Vercel 可用
+    rollupConfig: process.env.NODE_ENV === 'development' ? { external: ['ali-oss'] } : undefined,
     externals: {
       inline: ['lodash'],
     },

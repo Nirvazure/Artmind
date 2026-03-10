@@ -60,8 +60,8 @@ ArtMind/
 │   │   ├── painters/
 │   │   ├── models/      # GET（流派列表）
 │   │   └── style-covers/ # GET（流派封面映射）
-│   ├── data/            # 静态 JSON（画家）
-│   │   └── painters-list.json   # 画家详情（唯一画家数据源）
+│   ├── data/            # 静态数据（画家）
+│   │   └── painters-list.ts    # 画家详情（内联 TS，确保 serverless 可用的唯一数据源）
 │   ├── utils/
 │   │   ├── classifier.ts
 │   │   ├── painter-mapping.ts
@@ -197,4 +197,4 @@ git checkout <移除前的 commit> -- server/python
 
 - **`old/` 目录已删除**，旧版 Vue SPA + Flask 代码不再保留。
 - **`server/python/` 已删除**（2025-03-09）：改用 HF Space，本地 Python 推理不再需要。恢复方式见上方「已移除模块」。
-- **画家数据**：`painters-list.json` 为唯一数据源，风格→画家映射由运行时推导。
+- **画家数据**：`painters-list.ts` 为唯一数据源，风格→画家映射由运行时推导。
