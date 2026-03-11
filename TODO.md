@@ -1,74 +1,9 @@
-# ArtMind 开发任务
+# ArtMind 待办（仅保留未完成任务）
 
-基于初版静态 UI，按阶段推进。每个阶段内按功能模块组织。
-
----
-
-## 阶段一：交互与数据联通 ✅ 已完成
-
-### 画廊
-
-- [x] 在 gallery.vue 中接入 GalleryMasonry + GalleryArtworkCard，展示经典名画与用户作品（已移除，画廊页现为流派+艺术家）
-- [x] 艺术家筛选（按艺术家过滤作品列表，含认证标识与仅认证筛选）
-- [x] 流派展区、艺术家名录（编辑暂缓）
-
-### 流派说明
-
-- [x] models.json 已移除，GET /api/models 返回 27 流派名（从 styles-data 推导）
-- [x] 流派说明已并入 gallery 流派展区，展示 AI 可识别的 27 种艺术流派
-
----
-
-## 阶段二：AI 能力接入 ✅ 已完成
-
-### AI 模型
-
-- [x] **艺术流派专用模型**：已接入 keremberke/yolov8m-painting-classification（HF Space）
-- [x] 分析结果增加「模型原始输出」展示（rawLabels）
-
-### 部署（可选）
-
-- [x] **server/python 已移除**（2025-03-09）：改用 HF Space，不再本地部署 Python 推理。恢复方式见 README「已移除模块」。
 - [ ] 生产环境部署配置（Vercel，见 README「Vercel 部署」）
-
----
-
-## 阶段三：后端与云（暂缓）
-
-### 存储
-
-- [x] MongoDB Atlas 接入，替代 server/data/artworks.json
-- [x] 阿里云 OSS 接入，替代本地图片存储
-
-### 认证
-
-- [ ] Auth0 接入，用户登录与作品归属
-
----
-
-## 路由与分析统一（2026-03 更新）
-
-- [x] 移除独立 `/analyse/*` 页面，统一为 `/:id` 单页面承载
-- [x] `/` 入口随机跳转到 `/:id`（不自动分析）
-- [x] 画廊点击改为 `/:id?analyse=true`
-- [x] `analyse=true` 时：有 `analysisResult` 直出，无则自动分析并落库
-- [x] 浏览态（无 `analyse=true`）画作居中展示
-- [x] 恢复作品页上传与手动分析入口
-
-### 待完善
-
-- [ ] 增加 `lint` 脚本（当前 `npm run lint` 缺失）
-- [x] 为 `/:id?analyse=true` 增加防重复分析（in-flight 去重）
-
-### 规划中
-
-- [x] 分析防重复（同一请求去重）
-- [x] 作品编辑（标题/真实流派/真实画家）
-- [ ] 用户体系
 - [ ] 权限控制与审核员机制（用户体系阶段）
+- [ ] C-后续完整建模：新增 uploads 模型（上传历史与过期状态）
+- [ ] C-后续完整建模：新增 analysis_logs 模型（分析流水）
+- [ ] C-后续完整建模：用户主页专用聚合 API（分页/筛选/统计）
 
----
-
-## 参考
-
-- 当前 UI 与规划详见 [README.md](./README.md) 功能概览双栏表
+详细说明见 [README.md](./README.md)。

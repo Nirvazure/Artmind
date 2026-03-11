@@ -1,7 +1,7 @@
 import OSS from 'ali-oss'
 import { compressImageToUnder1MB } from './image-compress'
 
-type Prefix = 'temp' | 'artworks'
+type Prefix = 'temp' | 'artworks' | 'avatars'
 
 function getClient() {
   const config = useRuntimeConfig()

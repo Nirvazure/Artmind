@@ -43,6 +43,47 @@
       >
         Gallery
       </v-btn>
+      <v-menu v-if="auth.user.value" location="bottom">
+        <template #activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon
+            variant="text"
+            class="ml-2"
+          >
+            <v-avatar size="36">
+              <v-img
+                v-if="auth.user.value?.photo"
+                :src="auth.user.value.photo"
+                :alt="auth.user.value.name"
+                cover
+              />
+              <span v-else class="text-body2">{{ (auth.user.value?.name || 'U').charAt(0) }}</span>
+            </v-avatar>
+          </v-btn>
+        </template>
+        <v-list density="compact">
+          <v-list-item
+            :to="`/user/${auth.user.value?.id}`"
+            title="个人主页"
+            prepend-icon="mdi-account"
+          />
+          <v-list-item
+            title="退出登录"
+            prepend-icon="mdi-logout"
+            @click="auth.logout()"
+          />
+        </v-list>
+      </v-menu>
+      <v-btn
+        v-else-if="!auth.loading.value"
+        variant="outlined"
+        size="small"
+        class="ml-2 text-none"
+        @click="auth.login()"
+      >
+        登录
+      </v-btn>
     </v-app-bar>
     <v-main :class="mainClass">
       <v-container v-if="!isHome" fluid>
@@ -65,6 +106,11 @@ interface PainterItem {
 const route = useRoute()
 const filterStore = useGalleryFilterStore()
 const artworkStore = useArtworkStore()
+const auth = useAuthing()
+
+onMounted(() => {
+  if (!route.path.startsWith('/auth/')) auth.init()
+})
 
 const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')
 const painters = computed(() => paintersData.value ?? [])
@@ -229,7 +275,6 @@ const appBarClass = computed(() =>
 
 .app-bar-filter :deep(.v-field) {
   min-height: 40px;
-  border-radius: 10px;
 }
 
 @media (max-width: 599px) {
