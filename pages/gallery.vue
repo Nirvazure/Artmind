@@ -8,7 +8,7 @@
       :initial="{ opacity: 0, y: 14 }"
       :enter="{ opacity: 1, y: 0, transition: { delay: 110, duration: 320, easing: 'ease-out' } }"
     >
-      <div class="section-body" :key="`gallery-${artworkStore.artworks.length}`">
+      <div :key="`gallery-${artworkStore.artworks.length}`" class="section-body">
         <GalleryArtworkGrid :artworks="artworkStore.artworks" :filter-style="effectiveFilterStyle" :painters="painters" />
       </div>
     </v-sheet>
@@ -16,7 +16,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Artwork } from '~/stores/artwork'
 definePageMeta({ layout: 'home' })
 
 interface PainterItem {

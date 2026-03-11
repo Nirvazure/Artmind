@@ -1,5 +1,5 @@
 <template>
-  <div class="artwork-grid-wrap" :key="`grid-${artworks.length}`">
+  <div :key="`grid-${artworks.length}`" class="artwork-grid-wrap">
     <MasonryWall
       :items="visibleItems"
       :column-width="columnWidth"
@@ -13,6 +13,7 @@
           :index="index"
           :painter-names="getPainterNames(item)"
           :is-collected="isCollected(item)"
+          :show-collect="auth.isAuthenticated.value"
           @click="goToDetail(item)"
           @toggle-collect="toggleCollect(item.id)"
         />
@@ -48,6 +49,7 @@ function getPainterNames(item: Artwork): string[] {
 }
 
 const router = useRouter()
+const auth = useAuthing()
 const artworkStore = useArtworkStore()
 
 const filteredArtworks = computed(() =>
@@ -66,7 +68,7 @@ const columnWidth = ref(280)
 const ssrColumns = 2
 
 function isCollected(item: Artwork) {
-  return item.likes.includes('demo')
+  return item.likes.includes(auth.user.value?.id ?? '')
 }
 
 function toggleCollect(id: string) {

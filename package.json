@@ -12,10 +12,12 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
+    "@authing/web": "^5.1.21",
     "@pinia/nuxt": "^0.5.4",
-    "@yeger/vue-masonry-wall": "^6.1.0",
     "@vueuse/motion": "^3.0.3",
+    "@yeger/vue-masonry-wall": "^6.1.0",
     "ali-oss": "^6.20.0",
+    "authing-js-sdk": "^4.23.55",
     "chart.js": "^4.5.1",
     "mongodb": "^6.0.0",
     "nuxt": "^3.14.0",

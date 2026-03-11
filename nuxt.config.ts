@@ -26,6 +26,11 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/app.css'],
   runtimeConfig: {
+    public: {
+      authingAppId: (process.env.NUXT_PUBLIC_AUTHING_APP_ID || '').trim(),
+      authingDomain: (process.env.NUXT_PUBLIC_AUTHING_DOMAIN || '').trim(),
+      authingUserPoolId: (process.env.NUXT_PUBLIC_AUTHING_USER_POOL_ID || '').trim(),
+    },
     mongoUri: (process.env.MONGODB_URI || '').trim(),
     ossRegion: (process.env.OSS_REGION || '').trim(),
     ossBucket: (process.env.OSS_BUCKET || '').trim(),
@@ -33,6 +38,8 @@ export default defineNuxtConfig({
     ossAccessKeySecret: (process.env.OSS_ACCESS_KEY_SECRET || '').trim(),
     paintingInferenceUrl: (process.env.PAINTING_INFERENCE_URL || process.env.NUXT_PAINTING_INFERENCE_URL || '').trim(),
     paintingPredictPath: (process.env.PAINTING_PREDICT_PATH || process.env.NUXT_PAINTING_PREDICT_PATH || '/predict').trim(),
+    authingUserPoolId: (process.env.AUTHING_USER_POOL_ID || process.env.NUXT_PUBLIC_AUTHING_USER_POOL_ID || '').trim(),
+    authingSecret: (process.env.AUTHING_SECRET || '').trim(),
   },
   experimental: {
     appManifest: false,

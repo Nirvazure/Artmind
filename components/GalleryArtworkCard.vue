@@ -19,6 +19,7 @@
       />
     </div>
     <v-btn
+      v-if="showCollect"
       icon
       variant="text"
       size="small"
@@ -53,12 +54,16 @@
 import type { Artwork } from '~/stores/artwork'
 import VanillaTilt from 'vanilla-tilt'
 
-const props = defineProps<{
-  item: Artwork
-  index: number
-  painterNames: string[]
-  isCollected: boolean
-}>()
+withDefaults(
+  defineProps<{
+    item: Artwork
+    index: number
+    painterNames: string[]
+    isCollected: boolean
+    showCollect?: boolean
+  }>(),
+  { showCollect: true }
+)
 
 defineEmits<{
   click: []

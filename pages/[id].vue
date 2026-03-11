@@ -71,12 +71,12 @@
             class="result-side"
           >
             <AnalysisResultPanel
-              :view-phase="viewPhase"
-              :result="result"
               v-model:output-mode="outputMode"
               v-model:title="title"
               v-model:selected-style="selectedStyle"
               v-model:editable-painters="editablePainters"
+              :view-phase="viewPhase"
+              :result="result"
               :style-select-items="styleSelectItems"
               :model-styles-loading="modelStylesLoading"
               :saving-to-gallery="savingToGallery"

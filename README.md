@@ -20,7 +20,8 @@ ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画
 |----------|--------|
 | **首页路由**：`/` 自动重定向到随机作品 `/:id`，默认浏览态（画作居中） | — |
 | **分析模式**：`/:id?analyse=true` 自动展示/补全 `analysisResult`，支持上传、手动分析、修正真实流派/画家并保存到画廊 | — |
-| **画廊**：流派展区、艺术家名录（含认证标识） | 作品展示、作品编辑 |
+| **画廊**：流派展区、艺术家名录（含认证标识）、作品收藏（登录后可见收藏按钮） | 作品编辑 |
+| **个人主页**：`/user/:id` 分析记录、我的画廊、我的收藏；头像/昵称可编辑并持久化至 Authing | — |
 | **流派说明**：AI 可识别的 27 种艺术流派列表 | — |
 
 ---
@@ -31,7 +32,8 @@ ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画
 |------|------|
 | 前端 | Vue 3、Nuxt 3、Vuetify 3、Pinia |
 | 后端 | Nitro（API 路由） |
-| 存储 | MongoDB Atlas（作品数据）+ 阿里云 OSS（图片） |
+| 认证 | Authing（OIDC，个人主页、保存作品、收藏需登录） |
+| 存储 | MongoDB Atlas（作品数据）+ 阿里云 OSS（图片、头像） |
 | AI | Hugging Face Space（keremberke/yolov8m-painting-classification 艺术流派），需配置 PAINTING_INFERENCE_URL |
 
 ---
@@ -49,20 +51,29 @@ ArtMind/
 │   ├── GalleryArtworkGrid.vue
 │   ├── GalleryFilterBar.vue
 │   ├── PainterCards.vue
-│   └── StyleRingChart.vue
+│   ├── StyleRingChart.vue
+│   ├── ToastSnackbar.vue
+│   ├── UserProfileHeader.vue
+│   └── ...
 ├── composables/
-│   └── useClassifier.ts
+│   ├── useAuthing.ts
+│   ├── useClassifier.ts
+│   └── useToast.ts
 ├── layouts/
 │   └── home.vue
 ├── pages/
 │   ├── index.vue        # 入口页（重定向到随机 /:id）
 │   ├── [id].vue         # 作品页（浏览态 + analyse=true 分析态）
-│   └── gallery.vue      # 画廊（含流派说明、艺术家名录）
+│   ├── gallery.vue      # 画廊（含流派说明、艺术家名录）
+│   ├── user/[id].vue    # 个人主页（分析记录、我的画廊、我的收藏）
+│   └── auth/callback.vue # Authing 登录回调
 ├── server/
 │   ├── api/             # API 路由
 │   │   ├── classify.post.ts
 │   │   ├── upload.post.ts
-│   │   ├── artworks/    # GET/POST/PUT（MongoDB）
+│   │   ├── artworks/    # GET/POST/PUT（MongoDB，POST/PUT likes 需鉴权）
+│   │   ├── avatar.post.ts # 头像上传（OSS avatars/）
+│   │   ├── user/profile.put.ts # 用户资料更新（Authing Management API）
 │   │   ├── painters/
 │   │   ├── models/      # GET（流派列表）
 │   │   └── style-covers/ # GET（流派封面映射）
@@ -72,6 +83,7 @@ ArtMind/
 │   │   ├── classifier.ts
 │   │   ├── painter-mapping.ts
 │   │   ├── storage.ts
+│   │   ├── auth.ts      # getUserIdFromToken（OIDC introspection/validate_token）
 │   │   ├── artworks-data.ts
 │   │   ├── image-compress.ts    # 上传图片压缩
 │   │   ├── image-utils.ts      # 图片 Buffer 获取
@@ -143,7 +155,7 @@ OSS 目录结构（非根目录，按业务分前缀）：
 │   └── {uuid}.{ext}
 ├── artworks/           # 持久化作品图片（仅「保存到画廊」后）
 │   └── {uuid}.{ext}
-└── avatars/            # 未来：用户头像（Auth0 接入后）
+└── avatars/            # 用户头像（Authing 登录后点击头像选择图片上传）
     └── {userId}.{ext}
 ```
 
@@ -158,7 +170,13 @@ OSS 目录结构（非根目录，按业务分前缀）：
 
 未配置 OSS 时，上传接口返回 503。
 
-**Vercel 部署**：在 Vercel 项目 Settings → Environment Variables 中设置 `PAINTING_INFERENCE_URL`、`MONGODB_URI` 及上述 OSS 变量，作用环境勾选 Production、Preview。HF Space 冷启动约 2–3 分钟，已通过 maxDuration 配置适配。
+**Authing**：用户登录与个人资料。环境变量：
+- `NUXT_PUBLIC_AUTHING_APP_ID`
+- `NUXT_PUBLIC_AUTHING_DOMAIN`（如 `https://artmind.authing.cn`）
+- `NUXT_PUBLIC_AUTHING_USER_POOL_ID`
+- `AUTHING_SECRET`（Management API 更新头像/昵称，可选）
+
+**Vercel 部署**：在 Vercel 项目 Settings → Environment Variables 中设置 `PAINTING_INFERENCE_URL`、`MONGODB_URI`、Authing 变量及上述 OSS 变量，作用环境勾选 Production、Preview。HF Space 冷启动约 2–3 分钟，已通过 maxDuration 配置适配。
 
 ---
 
@@ -185,8 +203,10 @@ git checkout <移除前的 commit> -- server/python
 | POST | `/api/classify` | 图片风格分类（支持 multipart 或 JSON imageUrl） |
 | POST | `/api/upload` | 上传图片 |
 | GET | `/api/artworks` | 获取作品列表 |
-| POST | `/api/artworks` | 新增作品 |
-| PUT | `/api/artworks/:id` | 更新作品（如 likes） |
+| POST | `/api/artworks` | 新增作品（需鉴权） |
+| PUT | `/api/artworks/:id` | 更新作品（likes 需鉴权，仅可修改自己的收藏） |
+| POST | `/api/avatar` | 头像上传（需鉴权） |
+| PUT | `/api/user/profile` | 用户资料（头像、昵称）更新（需鉴权） |
 | GET | `/api/painters` | 艺术家列表（含 verified） |
 | GET | `/api/models` | 流派列表（27 种艺术流派名） |
 | GET | `/api/style-covers` | 流派封面映射 |
@@ -203,7 +223,7 @@ git checkout <移除前的 commit> -- server/python
 **后端与云**
 - [x] MongoDB Atlas 接入
 - [x] 阿里云 OSS 接入
-- [ ] Auth0 认证接入
+- [x] Authing 认证接入（OIDC 登录、个人主页、保存作品、收藏）
 
 **AI 与部署**
 - [x] Hugging Face Space（keremberke 艺术流派），原始输出展示
@@ -218,3 +238,20 @@ git checkout <移除前的 commit> -- server/python
 - **`server/python/` 已删除**（2025-03-09）：改用 HF Space，本地 Python 推理不再需要。恢复方式见上方「已移除模块」。
 - **组件精简**（2026-03）：移除 GalleryStyleStrip、GalleryPainterMarquee、ArtworkImageViewer；抽离 AnalysisResultPanel、PainterCards；画廊搜索框改为单横线样式。
 - **画家数据**：`painters-list.ts` 为唯一数据源，风格→画家映射由运行时推导。
+
+---
+
+## 开发历程（项目总结）
+
+基于初版静态 UI 按阶段推进，各阶段均已完成核心功能。
+
+**阶段一：交互与数据联通**  
+画廊流派展区、艺术家名录与筛选、27 种流派说明（从 styles-data 推导）。
+
+**阶段二：AI 能力接入**  
+接入 keremberke/yolov8m-painting-classification（HF Space），分析结果含 rawLabels；server/python 已移除。
+
+**阶段三：后端与云**  
+MongoDB Atlas、阿里云 OSS、Authing 认证；个人主页（分析记录、我的画廊、我的收藏）、头像/昵称编辑、作品收藏（likes 鉴权）、Toast 提示。
+
+**待规划**：权限与审核机制、uploads/analysis_logs 模型、用户主页聚合 API（分页/筛选）、作品编辑、生产部署细化。

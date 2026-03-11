@@ -59,7 +59,7 @@ const props = withDefaults(
     filterPainter: string | null
     compact?: boolean
   }>(),
-  { compact: false }
+  { compact: false, styleCoverMap: () => ({}) }
 )
 
 const emit = defineEmits<{
