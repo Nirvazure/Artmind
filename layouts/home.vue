@@ -229,7 +229,6 @@ const appBarClass = computed(() =>
 
 .app-bar-filter :deep(.v-field) {
   min-height: 40px;
-  border-radius: 10px;
 }
 
 @media (max-width: 599px) {

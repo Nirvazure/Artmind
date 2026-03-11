@@ -6,8 +6,8 @@
     clearable
     hide-details
     :density="props.compact ? 'compact' : 'comfortable'"
-    variant="outlined"
-    :class="['filter-search', { 'has-filter': hasActiveFilter }]"
+    variant="underlined"
+    class="filter-search"
     item-title="title"
     item-value="value"
     @update:model-value="onSelect"
@@ -69,8 +69,6 @@ const emit = defineEmits<{
 
 const styleCoverMap = computed(() => props.styleCoverMap ?? {})
 
-const hasActiveFilter = computed(() => !!props.filterStyle || !!props.filterPainter)
-
 const selected = ref<string | null>(null)
 
 function avatarUrl(name: string) {
@@ -127,15 +125,6 @@ function onSelect(val: string | null) {
 
 .filter-search:deep(.v-field) {
   min-height: 48px;
-  border-radius: 14px;
-  background: color-mix(in srgb, rgb(var(--v-theme-surface)) 90%, transparent);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.filter-search:deep(.v-field):hover,
-.filter-search.has-filter:deep(.v-field) {
-  border-color: rgba(var(--v-theme-primary), 0.4);
 }
 
 .filter-search-icon {

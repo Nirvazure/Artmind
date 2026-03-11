@@ -55,9 +55,16 @@
 - [x] 浏览态（无 `analyse=true`）画作居中展示
 - [x] 恢复作品页上传与手动分析入口
 
+### 组件与 UI 精简（2026-03）
+
+- [x] 画廊顶部搜索框改为单横线（variant underlined）
+- [x] [id].vue 抽离 AnalysisResultPanel、PainterCards
+- [x] 删除未使用组件：GalleryStyleStrip、GalleryPainterMarquee、ArtworkImageViewer
+- [x] 移除 GalleryFilterBar 冗余 has-filter 相关代码
+
 ### 待完善
 
-- [ ] 增加 `lint` 脚本（当前 `npm run lint` 缺失）
+- [x] 增加 `lint` 脚本（`npm run lint` 已存在）
 - [x] 为 `/:id?analyse=true` 增加防重复分析（in-flight 去重）
 
 ### 规划中

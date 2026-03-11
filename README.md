@@ -10,7 +10,7 @@
 
 ArtMind 是一个由 AI 驱动的 Web 应用。初版已实现首页分析、画廊展示与流派说明；当前使用 keremberke/yolov8m-painting-classification（HF Space）进行艺术流派分类，需配置 PAINTING_INFERENCE_URL。
 
-当前使用 MongoDB Atlas 存储作品数据，阿里云 OSS 存储上传图片。功能现状与规划见下方双栏表。
+当前使用 MongoDB Atlas 存储作品数据，阿里云 OSS 存储上传图片。2026-03 已完成组件精简（搜索框单横线、[id] 分析面板抽离、删除冗余组件）。功能现状与规划见下方双栏表。
 
 ---
 
@@ -44,8 +44,11 @@ ArtMind/
 ├── nuxt.config.ts
 ├── package.json
 ├── components/           # 可复用组件
-│   ├── GalleryPainterMarquee.vue
-│   ├── GalleryStyleStrip.vue
+│   ├── AnalysisResultPanel.vue
+│   ├── GalleryArtworkCard.vue
+│   ├── GalleryArtworkGrid.vue
+│   ├── GalleryFilterBar.vue
+│   ├── PainterCards.vue
 │   └── StyleRingChart.vue
 ├── composables/
 │   └── useClassifier.ts
@@ -106,7 +109,7 @@ MongoDB Cluster地址 https://cloud.mongodb.com/v2/69af790af0f890256658c274#/clu
 npm run build
 ```
 
-当前 `package.json` 暂无 `lint` 脚本；如需统一校验，请补充 `lint`（例如 `vue-tsc --noEmit` + ESLint）。
+运行 `npm run lint` 进行 ESLint 校验；`npm run build` 前会自动执行 `scripts/clear-oss-ts.mjs` 清理 ali-oss 依赖。
 
 ---
 
@@ -193,7 +196,8 @@ git checkout <移除前的 commit> -- server/python
 ## 路线图 / 待接入
 
 **前端与数据**
-- [x] 画廊：流派展区、艺术家名录
+- [x] 画廊：流派展区、艺术家名录、搜索筛选（单横线样式）
+- [x] 作品页：AnalysisResultPanel 分析面板抽离（2026-03）
 - [ ] 作品展示
 
 **后端与云**
@@ -212,4 +216,5 @@ git checkout <移除前的 commit> -- server/python
 
 - **`old/` 目录已删除**，旧版 Vue SPA + Flask 代码不再保留。
 - **`server/python/` 已删除**（2025-03-09）：改用 HF Space，本地 Python 推理不再需要。恢复方式见上方「已移除模块」。
+- **组件精简**（2026-03）：移除 GalleryStyleStrip、GalleryPainterMarquee、ArtworkImageViewer；抽离 AnalysisResultPanel、PainterCards；画廊搜索框改为单横线样式。
 - **画家数据**：`painters-list.ts` 为唯一数据源，风格→画家映射由运行时推导。
