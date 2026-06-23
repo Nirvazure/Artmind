@@ -1,16 +1,18 @@
 <template>
   <div class="glass-panel">
     <Transition name="fade-swap" mode="out-in">
-      <div v-if="viewPhase === 'analyzing'" key="loading" class="glass-content skeleton-wrap">
-        <div class="skeleton-line skeleton-title" />
-        <div class="skeleton-chart-row">
-          <div class="skeleton-circle" />
-          <div class="skeleton-list">
-            <div class="skeleton-line" />
-            <div class="skeleton-line" />
-            <div class="skeleton-line short" />
-          </div>
+      <div v-if="viewPhase === 'analyzing'" key="loading" class="glass-content analyzing-wrap">
+        <div class="analyzing-portrait-wrap">
+          <v-img
+            :src="VINCENT_LOADING_IMAGE_URL"
+            alt="梵高"
+            cover
+            class="analyzing-portrait"
+          />
         </div>
+        <p class="analyzing-caption">
+          正在掀起梵高的棺材板
+        </p>
       </div>
       <div v-else-if="result" key="result" class="glass-content">
         <div class="glass-section glass-section-output">
@@ -148,6 +150,8 @@ defineEmits<{
   'update:editablePainters': [value: string[]]
   saveToGallery: []
 }>()
+
+const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/vincent.jpg'
 </script>
 
 <style scoped>
@@ -268,47 +272,41 @@ defineEmits<{
   padding-bottom: 0;
 }
 
-.skeleton-wrap {
-  gap: 12px;
-}
-
-.skeleton-line {
-  height: 12px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.12) 100%);
-  background-size: 200% 100%;
-  animation: skeleton-flow 1.4s linear infinite;
-}
-
-.skeleton-title {
-  width: 44%;
-  height: 16px;
-}
-
-.skeleton-chart-row {
-  display: flex;
+.analyzing-wrap {
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  gap: 20px;
+  min-height: 280px;
+  padding: 16px 8px;
 }
 
-.skeleton-circle {
-  width: 112px;
-  height: 112px;
+.analyzing-portrait-wrap {
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.12) 100%);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 28px -16px rgba(0, 0, 0, 0.55);
+  animation: vangogh-float 3s ease-in-out infinite;
+}
+
+.analyzing-portrait {
+  width: 100%;
+  height: 100%;
+}
+
+.analyzing-caption {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.02em;
+  color: transparent;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.55) 100%);
   background-size: 200% 100%;
-  animation: skeleton-flow 1.4s linear infinite;
-}
-
-.skeleton-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.short {
-  width: 68%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: analyzing-shimmer 2s linear infinite;
 }
 
 .output-mode-toggle {
@@ -352,7 +350,17 @@ defineEmits<{
   transform: translateY(6px);
 }
 
-@keyframes skeleton-flow {
+@keyframes vangogh-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes analyzing-shimmer {
   from {
     background-position: 200% 0;
   }
@@ -365,6 +373,19 @@ defineEmits<{
   .glass-panel {
     width: 100%;
     max-width: none;
+  }
+
+  .analyzing-wrap {
+    min-height: 220px;
+  }
+
+  .analyzing-portrait-wrap {
+    width: 140px;
+    height: 140px;
+  }
+
+  .analyzing-caption {
+    font-size: 0.95rem;
   }
 }
 </style>
