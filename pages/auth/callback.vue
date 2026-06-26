@@ -15,24 +15,17 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'home' })
 
-const { $authing } = useNuxtApp()
 const router = useRouter()
-const auth = useAuthing()
+const auth = useAuth()
 const loading = ref(true)
 const message = ref('处理登录中…')
 
 onMounted(async () => {
   try {
-    if ($authing.isRedirectCallback()) {
-      await $authing.handleRedirectCallback()
-      await auth.init()
-      message.value = '登录成功，正在跳转…'
-      await nextTick()
-      router.replace('/')
-    } else {
-      message.value = '未检测到登录回调，正在返回首页…'
-      router.replace('/')
-    }
+    await auth.init()
+    message.value = '登录成功，正在跳转…'
+    await nextTick()
+    router.replace('/')
   } catch (e) {
     console.error('Auth callback error:', e)
     message.value = '登录失败，请重试'

@@ -1,6 +1,8 @@
 import { saveFile } from '../utils/storage'
 import { classify } from '../utils/classifier'
 import { getTopPaintersByStyle } from '../utils/painter-mapping'
+import { getUserIdFromToken } from '../utils/auth'
+import { getSupabaseAdmin } from '../utils/supabase-admin'
 import { randomUUID } from 'node:crypto'
 
 export interface ClassifyResult {
@@ -62,13 +64,33 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
     if (process.env.NODE_ENV === 'development') {
       console.warn('[classify] 完成, source:', result.source, 'imageUrl:', imageUrl.slice(0, 50))
     }
-    return {
+    const classifyResult = {
       styles: result.styles,
       painters,
       imageUrl,
       source: result.source,
       rawLabels: result.rawLabels,
     }
+
+    const userId = await getUserIdFromToken(event)
+    if (userId) {
+      try {
+        const supabase = getSupabaseAdmin()
+        await supabase.from('analysis_logs').insert({
+          user_id: userId,
+          image_url: imageUrl,
+          analysis_result: {
+            styles: result.styles,
+            painters,
+            rawLabels: result.rawLabels,
+          },
+        })
+      } catch {
+        // analysis_logs 失败不影响分类结果
+      }
+    }
+
+    return classifyResult
   } catch (e) {
     const err = e as Error & { statusCode?: number }
     if (err?.statusCode && err.statusCode >= 400) {

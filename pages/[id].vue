@@ -292,7 +292,13 @@ async function loadArtwork() {
   try {
     let a = artworkStore.artworks.find((x) => x.id === id.value)
     if (!a) {
-      a = await $fetch<import('~/stores/artwork').Artwork>(`/api/artworks/${id.value}`)
+      a = await artworkStore.fetchArtworkById(id.value) ?? undefined
+    }
+    if (!a) {
+      error.value = '作品不存在'
+      notFound.value = true
+      artwork.value = null
+      return
     }
     artwork.value = a
     syncEditableFromResult()

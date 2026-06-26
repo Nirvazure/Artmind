@@ -80,7 +80,7 @@
         variant="outlined"
         size="small"
         class="ml-2 text-none"
-        @click="auth.login()"
+        to="/login"
       >
         登录
       </v-btn>
@@ -106,10 +106,10 @@ interface PainterItem {
 const route = useRoute()
 const filterStore = useGalleryFilterStore()
 const artworkStore = useArtworkStore()
-const auth = useAuthing()
+const auth = useAuth()
 
 onMounted(() => {
-  if (!route.path.startsWith('/auth/')) auth.init()
+  if (!route.path.startsWith('/auth/') && route.path !== '/login') auth.init()
 })
 
 const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')

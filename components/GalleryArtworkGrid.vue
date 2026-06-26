@@ -49,7 +49,7 @@ function getPainterNames(item: Artwork): string[] {
 }
 
 const router = useRouter()
-const auth = useAuthing()
+const auth = useAuth()
 const artworkStore = useArtworkStore()
 
 const filteredArtworks = computed(() =>

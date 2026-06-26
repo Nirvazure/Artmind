@@ -1,6 +1,7 @@
 import { insertArtwork } from '../../utils/artworks-data'
 import type { Artwork } from '../../utils/artworks-data'
 import { getUserIdFromToken } from '../../utils/auth'
+import { getSupabaseAdmin } from '../../utils/supabase-admin'
 import { getImageDimensions } from '../../utils/image-dimensions'
 import { copyFromTempToArtworks } from '../../utils/storage'
 import { randomUUID } from 'node:crypto'
@@ -39,5 +40,17 @@ export default defineEventHandler(async (event) => {
     ...(dims && { imageWidth: dims.width, imageHeight: dims.height }),
     ...(body.analysisResult && { analysisResult: body.analysisResult }),
   }
-  return insertArtwork(newArtwork)
+  const created = await insertArtwork(newArtwork)
+
+  try {
+    const supabase = getSupabaseAdmin()
+    await supabase
+      .from('uploads')
+      .update({ saved: true })
+      .eq('temp_path', body.imageUrl)
+  } catch {
+    // uploads 标记失败不影响保存
+  }
+
+  return created
 })
