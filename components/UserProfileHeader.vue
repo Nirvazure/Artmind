@@ -144,7 +144,7 @@ const emit = defineEmits<{
   'update-name': [name: string]
 }>()
 
-const auth = useAuthing()
+const auth = useAuth()
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const uploadingAvatar = ref(false)
 const editingName = ref(false)

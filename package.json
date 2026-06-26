@@ -9,17 +9,16 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "generate": "nuxt generate",
-    "preview": "nuxt preview"
+    "preview": "nuxt preview",
+    "migrate:mongo": "node scripts/migrate-mongo-to-supabase.mjs"
   },
   "dependencies": {
-    "@authing/web": "^5.1.21",
     "@pinia/nuxt": "^0.5.4",
     "@vueuse/motion": "^3.0.3",
     "@yeger/vue-masonry-wall": "^6.1.0",
     "ali-oss": "^6.20.0",
-    "authing-js-sdk": "^4.23.55",
     "chart.js": "^4.5.1",
-    "mongodb": "^6.0.0",
+    "cookie-es": "^3.1.1",
     "nuxt": "^3.14.0",
     "pinia": "^2.2.4",
     "sharp": "^0.33.0",
@@ -32,8 +31,12 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "@nuxtjs/supabase": "^2.0.9",
+    "@supabase/supabase-js": "^2.106.0",
     "@types/node": "^22.10.0",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
+    "mongodb": "^7.4.0",
     "typescript": "^5.6.3",
     "vue-tsc": "^2.1.6"
   }

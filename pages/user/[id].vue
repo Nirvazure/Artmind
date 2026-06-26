@@ -1,6 +1,6 @@
 <template>
   <div class="user-page pa-4" :class="{ 'layout-desktop': isDesktop }">
-    <div v-if="auth.loading.value" class="text-center py-8">
+    <div v-if="auth.loading.value || artworksLoading" class="text-center py-8">
       <v-progress-circular indeterminate color="primary" />
     </div>
     <div v-else-if="!canView" class="text-center py-8">
@@ -145,11 +145,19 @@ import { MasonryWall } from '@yeger/vue-masonry-wall'
 definePageMeta({ layout: 'home' })
 
 const route = useRoute()
-const auth = useAuthing()
-const artworkStore = useArtworkStore()
+const auth = useAuth()
 const activeTab = ref<'analyze' | 'gallery' | 'collection'>('analyze')
 const isDesktop = ref(false)
 const columnWidth = ref(220)
+
+const userId = computed(() => auth.user.value?.id)
+const {
+  myArtworks,
+  myCollectedArtworks,
+  analyzedArtworks,
+  loading: artworksLoading,
+  refresh: refreshUserArtworks,
+} = useUserArtworks(userId)
 
 function checkDesktop() {
   if (typeof window === 'undefined') return
@@ -167,7 +175,6 @@ function updateColumnWidth() {
 
 onMounted(async () => {
   if (!auth.user.value) await auth.init()
-  if (!artworkStore.artworks.length) await artworkStore.fetchArtworks()
   checkDesktop()
   updateColumnWidth()
   window.addEventListener('resize', checkDesktop)
@@ -181,18 +188,6 @@ onUnmounted(() => {
   }
 })
 
-const myArtworks = computed(() =>
-  artworkStore.artworks.filter((item) => item.userId === auth.user.value?.id)
-)
-
-const analyzedArtworks = computed(() =>
-  myArtworks.value.filter((item) => !!item.analysisResult)
-)
-
-const myCollectedArtworks = computed(() =>
-  artworkStore.artworks.filter((a) => a.likes.includes(auth.user.value?.id ?? ''))
-)
-
 const canView = computed(() => {
   const targetId = route.params.id as string
   return !!auth.user.value?.id && targetId === auth.user.value.id
@@ -202,8 +197,9 @@ async function onAvatarSuccess(url: string) {
   auth.setPhoto(url)
   try {
     await auth.updateProfile({ photo: url })
+    await refreshUserArtworks()
   } catch {
-    // 已通过 setPhoto 更新展示，Authing 若不支持 updateProfile 则仅本地生效
+    // 已通过 setPhoto 更新展示
   }
 }
 </script>

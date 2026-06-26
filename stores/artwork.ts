@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { mapArtworkRow, artworkSelectQuery } from '~/composables/useArtworkMapper'
 
 export interface ArtworkAnalysisResult {
   styles: { name: string; confidence: number }[]
@@ -27,8 +28,35 @@ export const useArtworkStore = defineStore('artwork', {
   }),
   actions: {
     async fetchArtworks() {
-      this.artworks = await $fetch<Artwork[]>('/api/artworks')
+      const supabase = useSupabaseClient()
+      const { data, error } = await supabase
+        .from('artworks')
+        .select(artworkSelectQuery)
+        .eq('is_public', true)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      this.artworks = (data ?? []).map((row) => mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0]))
     },
+
+    async fetchArtworkById(id: string): Promise<Artwork | null> {
+      const cached = this.artworks.find((a) => a.id === id)
+      if (cached) return cached
+      const supabase = useSupabaseClient()
+      const { data, error } = await supabase
+        .from('artworks')
+        .select(artworkSelectQuery)
+        .eq('id', id)
+        .maybeSingle()
+      if (error) throw error
+      if (!data) return null
+      const artwork = mapArtworkRow(data as Parameters<typeof mapArtworkRow>[0])
+      const idx = this.artworks.findIndex((a) => a.id === id)
+      if (idx === -1) this.artworks.push(artwork)
+      else this.artworks[idx] = artwork
+      return artwork
+    },
+
     async addArtwork(payload: {
       title: string
       style: string
@@ -36,7 +64,7 @@ export const useArtworkStore = defineStore('artwork', {
       isPublic: boolean
       analysisResult?: ArtworkAnalysisResult
     }) {
-      const auth = useAuthing()
+      const auth = useAuth()
       const token = await auth.getAccessToken()
       if (!token) throw new Error('请先登录后再保存到画廊')
       const created = await $fetch<Artwork>('/api/artworks', {
@@ -47,35 +75,40 @@ export const useArtworkStore = defineStore('artwork', {
       this.artworks.unshift(created)
       return created
     },
-    /** 收藏/取消收藏（复用 likes 字段，语义为收藏者 ID 列表） */
+
     async toggleLike(id: string) {
       const toast = useToast()
       try {
-        const auth = useAuthing()
+        const auth = useAuth()
         const userId = auth.user.value?.id
-        const token = await auth.getAccessToken()
-        if (!userId || !token) throw new Error('请先登录')
+        if (!userId) throw new Error('请先登录')
         const artwork = this.artworks.find((a) => a.id === id)
         if (!artwork) return
         const wasCollected = artwork.likes.includes(userId)
-        const newLikes = wasCollected
-          ? artwork.likes.filter((uid) => uid !== userId)
-          : [...artwork.likes, userId]
-        const updated = await $fetch<Artwork>(`/api/artworks/${id}`, {
-          method: 'PUT',
-          body: { likes: newLikes },
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        const idx = this.artworks.findIndex((a) => a.id === id)
-        if (idx !== -1) this.artworks[idx] = updated
+        const supabase = useSupabaseClient()
+        if (wasCollected) {
+          const { error } = await supabase
+            .from('artwork_likes')
+            .delete()
+            .match({ artwork_id: id, user_id: userId })
+          if (error) throw error
+          artwork.likes = artwork.likes.filter((uid) => uid !== userId)
+        } else {
+          const { error } = await supabase
+            .from('artwork_likes')
+            .insert({ artwork_id: id, user_id: userId })
+          if (error) throw error
+          artwork.likes = [...artwork.likes, userId]
+        }
         toast.success(wasCollected ? '已取消收藏' : '已收藏')
       } catch (err) {
         const msg = (err as Error)?.message ?? '操作失败'
         toast.error(msg)
       }
     },
+
     async updateArtworkAnalysis(id: string, analysisResult: ArtworkAnalysisResult) {
-      const updated = await $fetch<Artwork>(`/api/artworks/${id}`, {
+      const updated = await $fetch<Artwork>(`/api/artworks/${id}/analysis`, {
         method: 'PUT',
         body: { analysisResult },
       })

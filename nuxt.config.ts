@@ -1,11 +1,18 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
+  // @supabase/ssr 在 Vite 客户端侧 import { parse } from 'cookie' 与 cookie@1.x CJS 不兼容
+  alias: {
+    cookie: 'cookie-es',
+  },
   nitro: {
     vercel: {
       functions: {
         maxDuration: 180,
       },
+    },
+    alias: {
+      cookie: 'cookie-es',
     },
     // ali-oss 打包后会触发 debug 依赖的 ESM/CJS 兼容问题，改走 nitro externals 追踪依赖
     externals: {
@@ -26,26 +33,26 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/app.css'],
   runtimeConfig: {
-    public: {
-      authingAppId: (process.env.NUXT_PUBLIC_AUTHING_APP_ID || '').trim(),
-      authingDomain: (process.env.NUXT_PUBLIC_AUTHING_DOMAIN || '').trim(),
-      authingUserPoolId: (process.env.NUXT_PUBLIC_AUTHING_USER_POOL_ID || '').trim(),
-    },
-    mongoUri: (process.env.MONGODB_URI || '').trim(),
+    supabaseServiceRoleKey: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
     ossRegion: (process.env.OSS_REGION || '').trim(),
     ossBucket: (process.env.OSS_BUCKET || '').trim(),
     ossAccessKeyId: (process.env.OSS_ACCESS_KEY_ID || '').trim(),
     ossAccessKeySecret: (process.env.OSS_ACCESS_KEY_SECRET || '').trim(),
     paintingInferenceUrl: (process.env.PAINTING_INFERENCE_URL || process.env.NUXT_PAINTING_INFERENCE_URL || '').trim(),
     paintingPredictPath: (process.env.PAINTING_PREDICT_PATH || process.env.NUXT_PAINTING_PREDICT_PATH || '/predict').trim(),
-    authingUserPoolId: (process.env.AUTHING_USER_POOL_ID || process.env.NUXT_PUBLIC_AUTHING_USER_POOL_ID || '').trim(),
-    authingSecret: (process.env.AUTHING_SECRET || '').trim(),
   },
   experimental: {
     appManifest: false,
   },
   build: { transpile: ['vue-countup-v3'] },
-  modules: ['@nuxt/eslint', '@pinia/nuxt', 'vuetify-nuxt-module'],
+  modules: ['@nuxt/eslint', '@pinia/nuxt', 'vuetify-nuxt-module', '@nuxtjs/supabase'],
+  supabase: {
+    // 作品页 /:id 为公开路由，禁用全局重定向；登录入口由 /login 与个人页自行控制
+    redirect: false,
+    clientOptions: {
+      db: { schema: 'artmind' },
+    },
+  },
   vuetify: {
     vuetifyOptions: {
       theme: {
