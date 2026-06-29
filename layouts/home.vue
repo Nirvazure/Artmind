@@ -81,10 +81,6 @@ const filterStore = useGalleryFilterStore()
 const artworkStore = useArtworkStore()
 const auth = useAuth()
 
-onMounted(() => {
-  if (!route.path.startsWith('/auth/') && route.path !== '/login') auth.init()
-})
-
 const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')
 const painters = computed(() => paintersData.value ?? [])
 

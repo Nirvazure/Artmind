@@ -176,7 +176,6 @@ function updateColumnWidth() {
 }
 
 onMounted(async () => {
-  if (!auth.user.value) await auth.init()
   checkDesktop()
   updateColumnWidth()
   window.addEventListener('resize', checkDesktop)
