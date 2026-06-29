@@ -3,11 +3,19 @@
     <div class="page-inner">
       <div
         class="page-bg-shadow"
-        :style="displayImageSrc ? { backgroundImage: `url(${displayImageSrc})` } : { backgroundColor: 'rgba(30, 28, 26, 0.4)' }"
+        :style="
+          displayImageSrc
+            ? { backgroundImage: `url(${displayImageSrc})` }
+            : { backgroundColor: 'rgba(30, 28, 26, 0.4)' }
+        "
       />
       <div
         class="page-bg-blur"
-        :style="displayImageSrc ? { backgroundImage: `url(${displayImageSrc})` } : { backgroundColor: 'rgba(40, 38, 36, 0.5)' }"
+        :style="
+          displayImageSrc
+            ? { backgroundImage: `url(${displayImageSrc})` }
+            : { backgroundColor: 'rgba(40, 38, 36, 0.5)' }
+        "
       />
       <div class="page-bg-overlay" />
 
@@ -66,10 +74,7 @@
             </div>
           </section>
 
-          <section
-            v-if="viewPhase !== 'idle'"
-            class="result-side"
-          >
+          <section v-if="viewPhase !== 'idle'" class="result-side">
             <AnalysisResultPanel
               v-model:output-mode="outputMode"
               v-model:title="title"
@@ -98,13 +103,7 @@
       >
         换一张
       </v-btn>
-      <input
-        ref="fileInput"
-        type="file"
-        accept="image/*"
-        class="d-none"
-        @change="onFileSelected"
-      >
+      <input ref="fileInput" type="file" accept="image/*" class="d-none" @change="onFileSelected" />
     </div>
   </div>
 </template>
@@ -292,7 +291,7 @@ async function loadArtwork() {
   try {
     let a = artworkStore.artworks.find((x) => x.id === id.value)
     if (!a) {
-      a = await artworkStore.fetchArtworkById(id.value) ?? undefined
+      a = (await artworkStore.fetchArtworkById(id.value)) ?? undefined
     }
     if (!a) {
       error.value = '作品不存在'
@@ -390,7 +389,12 @@ async function saveToGallery() {
   savingToGallery.value = true
   try {
     const normalizedPainters = normalizePaintersInput(editablePainters.value)
-    const resolvedStyle = (selectedStyle.value || aiTopStyle.value || r.styles[0]?.name || '').trim()
+    const resolvedStyle = (
+      selectedStyle.value ||
+      aiTopStyle.value ||
+      r.styles[0]?.name ||
+      ''
+    ).trim()
     const resolvedTitle = (title.value || resolvedStyle || '未命名').trim()
     const created = await artworkStore.addArtwork({
       title: resolvedTitle,
@@ -434,36 +438,214 @@ watch([id, analyzeMode], loadArtwork)
 
 onUnmounted(() => {
   if (uploadedImageUrl.value) URL.revokeObjectURL(uploadedImageUrl.value)
-  const tilt = (frameRef.value as (HTMLElement & { vanillaTilt?: { destroy: () => void } }) | null)?.vanillaTilt
+  const tilt = (frameRef.value as (HTMLElement & { vanillaTilt?: { destroy: () => void } }) | null)
+    ?.vanillaTilt
   tilt?.destroy()
 })
 </script>
 
 <style scoped>
-.page { height: 100%; min-height: 0; overflow: hidden; width: 100%; display: flex; flex-direction: column; --ui-text: #f4f7fb; --ui-muted: rgba(244, 247, 251, 0.78); --ui-panel-bg: rgba(10, 14, 20, 0.44); --ui-panel-border: rgba(255, 255, 255, 0.28); --ui-divider: rgba(255, 255, 255, 0.2); color: var(--ui-text); }
-.page-inner { height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-.page-bg-blur { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(14px) saturate(0.95); opacity: 0.68; transform: scale(1.16); transform-origin: center center; z-index: 0; }
-.page-bg-shadow { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.46; filter: blur(2px) saturate(1.02) brightness(0.95); transform: scale(1.08); z-index: 0; }
-.page-bg-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.16) 20%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0.18) 100%); z-index: 1; pointer-events: none; }
-.page-main { flex: 1; min-height: 0; padding: 18px 3vw 20px; position: relative; z-index: 2; display: flex; justify-content: center; }
-.content-shell { width: min(90vw, 1600px); min-height: 0; display: flex; align-items: center; gap: 28px; --art-stage-width: min(58vw, 960px); }
-.art-stage { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 16px; width: var(--art-stage-width); transition: width 0.35s ease; }
-.phase-idle .art-stage { align-items: center; }
-.phase-idle .content-shell { justify-content: center; }
-.phase-analyzing .art-stage, .phase-resolved .art-stage { align-items: flex-start; }
-.phase-analyzing .content-shell, .phase-resolved .content-shell { justify-content: space-between; }
-.frame-container { flex-shrink: 0; width: 100%; min-height: 240px; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1); transform-style: preserve-3d; }
-.frame-inner { width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
-.frame-img { width: 100%; height: 100%; }
-.frame-skeleton { width: 100%; height: 100%; min-height: 240px; border-radius: inherit; background: linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 100%); background-size: 200% 100%; animation: skeleton-flow 1.4s linear infinite; }
-@keyframes skeleton-flow { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-.result-side { width: min(45%, 680px); min-width: 320px; display: flex; justify-content: flex-end; }
-.switch-artwork-fab { position: fixed; right: 24px; bottom: 24px; z-index: 100; min-width: 44px; min-height: 44px; }
-.controls-row { display: flex; align-items: center; gap: 8px; width: 100%; }
-.controls-actions-group { display: flex; align-items: center; gap: 8px; width: 100%; }
-.upload-btn { color: var(--ui-text) !important; border-color: var(--ui-panel-border) !important; }
-.glass-tools { width: 100%; background: rgba(8, 12, 18, 0.42); border: 1px solid var(--ui-panel-border); border-radius: 14px; padding: 12px; backdrop-filter: blur(18px); }
-.analyze-btn--d:hover:not(.v-btn--disabled) { transform: scale(1.03); }
-.analyze-btn--d:active:not(.v-btn--disabled) { transform: scale(0.98); }
-@media (max-width: 599px) { .page-main { padding: 10px 12px 14px; } .content-shell { width: 100%; flex-direction: column; gap: 14px; } .art-stage { width: 100%; } .result-side { width: 100%; min-width: 0; } .switch-artwork-fab { right: 16px; bottom: 16px; } }
+.page {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  --ui-text: #f4f7fb;
+  --ui-muted: rgba(244, 247, 251, 0.78);
+  --ui-panel-bg: rgba(10, 14, 20, 0.44);
+  --ui-panel-border: rgba(255, 255, 255, 0.28);
+  --ui-divider: rgba(255, 255, 255, 0.2);
+  color: var(--ui-text);
+}
+.page-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.page-bg-blur {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(14px) saturate(0.95);
+  opacity: 0.68;
+  transform: scale(1.16);
+  transform-origin: center center;
+  z-index: 0;
+}
+.page-bg-shadow {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.46;
+  filter: blur(2px) saturate(1.02) brightness(0.95);
+  transform: scale(1.08);
+  z-index: 0;
+}
+.page-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.28) 0%,
+    rgba(0, 0, 0, 0.16) 20%,
+    rgba(0, 0, 0, 0.1) 45%,
+    rgba(0, 0, 0, 0.18) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+.page-main {
+  flex: 1;
+  min-height: 0;
+  padding: 18px 3vw 20px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+}
+.content-shell {
+  width: min(90vw, 1600px);
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  --art-stage-width: min(58vw, 960px);
+}
+.art-stage {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: var(--art-stage-width);
+  transition: width 0.35s ease;
+}
+.phase-idle .art-stage {
+  align-items: center;
+}
+.phase-idle .content-shell {
+  justify-content: center;
+}
+.phase-analyzing .art-stage,
+.phase-resolved .art-stage {
+  align-items: flex-start;
+}
+.phase-analyzing .content-shell,
+.phase-resolved .content-shell {
+  justify-content: space-between;
+}
+.frame-container {
+  flex-shrink: 0;
+  width: 100%;
+  min-height: 240px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform-style: preserve-3d;
+}
+.frame-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.frame-img {
+  width: 100%;
+  height: 100%;
+}
+.frame-skeleton {
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-flow 1.4s linear infinite;
+}
+@keyframes skeleton-flow {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.result-side {
+  width: min(45%, 680px);
+  min-width: 320px;
+  display: flex;
+  justify-content: flex-end;
+}
+.switch-artwork-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  min-width: 44px;
+  min-height: 44px;
+}
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.controls-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.upload-btn {
+  color: var(--ui-text) !important;
+  border-color: var(--ui-panel-border) !important;
+}
+.glass-tools {
+  width: 100%;
+  background: rgba(8, 12, 18, 0.42);
+  border: 1px solid var(--ui-panel-border);
+  border-radius: 14px;
+  padding: 12px;
+  backdrop-filter: blur(18px);
+}
+.analyze-btn--d:hover:not(.v-btn--disabled) {
+  transform: scale(1.03);
+}
+.analyze-btn--d:active:not(.v-btn--disabled) {
+  transform: scale(0.98);
+}
+@media (max-width: 599px) {
+  .page-main {
+    padding: 10px 12px 14px;
+  }
+  .content-shell {
+    width: 100%;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .art-stage {
+    width: 100%;
+  }
+  .result-side {
+    width: 100%;
+    min-width: 0;
+  }
+  .switch-artwork-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
 </style>

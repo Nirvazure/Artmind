@@ -36,7 +36,9 @@ export const useArtworkStore = defineStore('artwork', {
         .eq('status', 'published')
         .order('created_at', { ascending: false })
       if (error) throw error
-      this.artworks = (data ?? []).map((row) => mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0]))
+      this.artworks = (data ?? []).map((row) =>
+        mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0]),
+      )
     },
 
     async fetchArtworkById(id: string): Promise<Artwork | null> {

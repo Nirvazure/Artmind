@@ -10,7 +10,10 @@ export async function getUserIdFromToken(event: H3Event): Promise<string | null>
   if (!token) return null
 
   const supabase = await serverSupabaseClient(event)
-  const { data: { user }, error } = await supabase.auth.getUser(token)
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token)
   if (error || !user) return null
   return user.id
 }

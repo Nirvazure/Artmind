@@ -10,7 +10,9 @@ export interface StylePrediction {
 const FALLBACK_STYLE = '印象派'
 
 function mapKeremberkeLabelToStyle(label: string): string {
-  return KEREMBERKE_TO_STYLE[label] ?? KEREMBERKE_TO_STYLE[label.replace(/\s+/g, '_')] ?? FALLBACK_STYLE
+  return (
+    KEREMBERKE_TO_STYLE[label] ?? KEREMBERKE_TO_STYLE[label.replace(/\s+/g, '_')] ?? FALLBACK_STYLE
+  )
 }
 
 /**
@@ -21,13 +23,17 @@ function mapKeremberkeLabelToStyle(label: string): string {
  */
 export async function classify(
   imageInput: Buffer | string,
-  _model?: string
-): Promise<{ styles: StylePrediction[]; topStyle: string; source: 'painting'; rawLabels?: Array<{ label: string; score: number }> }> {
+  _model?: string,
+): Promise<{
+  styles: StylePrediction[]
+  topStyle: string
+  source: 'painting'
+  rawLabels?: Array<{ label: string; score: number }>
+}> {
   const config = useRuntimeConfig()
-  const paintingUrl = (
+  const paintingUrl =
     (config.paintingInferenceUrl as string)?.trim() ||
     (process.env.PAINTING_INFERENCE_URL || process.env.NUXT_PAINTING_INFERENCE_URL || '').trim()
-  )
 
   if (!paintingUrl) {
     throw createError({

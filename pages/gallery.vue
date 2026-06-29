@@ -9,7 +9,11 @@
       :enter="{ opacity: 1, y: 0, transition: { delay: 110, duration: 320, easing: 'ease-out' } }"
     >
       <div :key="`gallery-${artworkStore.artworks.length}`" class="section-body">
-        <GalleryArtworkGrid :artworks="artworkStore.artworks" :filter-style="effectiveFilterStyle" :painters="painters" />
+        <GalleryArtworkGrid
+          :artworks="artworkStore.artworks"
+          :filter-style="effectiveFilterStyle"
+          :painters="painters"
+        />
       </div>
     </v-sheet>
   </div>
@@ -49,7 +53,9 @@ onMounted(() => {
 .gallery-page {
   min-height: 100%;
   padding: clamp(20px, 2.8vw, 40px);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   max-width: 1920px;
   margin: 0 auto;
 }
@@ -59,8 +65,6 @@ onMounted(() => {
     padding: 12px 16px;
   }
 }
-
-
 
 .gallery-section.m3-section {
   padding: clamp(18px, 2.4vw, 28px);
@@ -120,4 +124,3 @@ onMounted(() => {
   color: var(--gallery-text);
 }
 </style>
-

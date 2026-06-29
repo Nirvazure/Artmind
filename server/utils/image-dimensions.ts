@@ -4,7 +4,7 @@ import sharp from 'sharp'
  * 从图片 URL 获取宽高，失败时返回 null
  */
 export async function getImageDimensions(
-  imageUrl: string
+  imageUrl: string,
 ): Promise<{ width: number; height: number } | null> {
   try {
     const buf = await $fetch<ArrayBuffer>(imageUrl)

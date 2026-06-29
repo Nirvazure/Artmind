@@ -1,19 +1,9 @@
 <template>
   <v-app :class="['home-layout', { 'layout-gallery': route.path.startsWith('/gallery') }]">
-    <v-app-bar
-      elevation="0"
-      prominent
-      :class="[appBarClass, 'app-bar-shell']"
-    >
-      <img
-        src="/icon.png"
-        alt="ArtMind"
-        class="appbar-logo-icon mr-2"
-      >
+    <v-app-bar elevation="0" prominent :class="[appBarClass, 'app-bar-shell']">
+      <img src="/icon.png" alt="ArtMind" class="appbar-logo-icon mr-2" />
       <div class="d-flex flex-column">
-        <v-toolbar-title class="font-weight-bold">
-          ArtMind
-        </v-toolbar-title>
+        <v-toolbar-title class="font-weight-bold"> ArtMind </v-toolbar-title>
         <span class="app-bar-subtitle"> AI 绘画分析引擎</span>
       </div>
       <v-spacer />
@@ -27,63 +17,46 @@
         class="app-bar-filter"
         compact
       />
-      <v-btn
-        v-if="route.path.startsWith('/gallery')"
-        :to="'/'"
-        variant="text"
-        class="text-none"
-      >
+      <v-btn v-if="route.path.startsWith('/gallery')" :to="'/'" variant="text" class="text-none">
         Home
       </v-btn>
-      <v-btn
-        v-else
-        :to="'/gallery'"
-        variant="text"
-        class="text-none"
-      >
-        Gallery
-      </v-btn>
-      <v-menu v-if="auth.user.value" location="bottom">
-        <template #activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon
-            variant="text"
-            class="ml-2"
-          >
-            <v-avatar size="36">
-              <v-img
-                v-if="auth.user.value?.photo"
-                :src="auth.user.value.photo"
-                :alt="auth.user.value.name"
-                cover
-              />
-              <span v-else class="text-body2">{{ (auth.user.value?.name || 'U').charAt(0) }}</span>
-            </v-avatar>
-          </v-btn>
-        </template>
-        <v-list density="compact">
-          <v-list-item
-            :to="`/user/${auth.user.value?.id}`"
-            title="个人主页"
-            prepend-icon="mdi-account"
-          />
-          <v-list-item
-            title="退出登录"
-            prepend-icon="mdi-logout"
-            @click="auth.logout()"
-          />
-        </v-list>
-      </v-menu>
-      <v-btn
-        v-else-if="!auth.loading.value"
-        variant="outlined"
-        size="small"
-        class="ml-2 text-none"
-        to="/login"
-      >
-        登录
-      </v-btn>
+      <v-btn v-else :to="'/gallery'" variant="text" class="text-none"> Gallery </v-btn>
+      <ClientOnly>
+        <v-menu v-if="auth.user.value" location="bottom">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" icon variant="text" class="ml-2">
+              <v-avatar size="36">
+                <v-img
+                  v-if="auth.user.value?.photo"
+                  :src="auth.user.value.photo"
+                  :alt="auth.user.value.name"
+                  cover
+                />
+                <span v-else class="text-body2">{{
+                  (auth.user.value?.name || 'U').charAt(0)
+                }}</span>
+              </v-avatar>
+            </v-btn>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+              :to="`/user/${auth.user.value?.id}`"
+              title="个人主页"
+              prepend-icon="mdi-account"
+            />
+            <v-list-item title="退出登录" prepend-icon="mdi-logout" @click="auth.logout()" />
+          </v-list>
+        </v-menu>
+        <v-btn
+          v-else-if="!auth.loading.value"
+          variant="outlined"
+          size="small"
+          class="ml-2 text-none"
+          to="/login"
+        >
+          登录
+        </v-btn>
+      </ClientOnly>
     </v-app-bar>
     <v-main :class="mainClass">
       <v-container v-if="!isHome" fluid>
@@ -124,7 +97,7 @@ const allItems = computed(() =>
     title: a.title,
     style: a.style,
     imageUrl: a.imageUrl,
-  }))
+  })),
 )
 const { data: styleCoversData } = await useFetch<Record<string, string>>('/api/style-covers')
 const styleCoverMap = computed(() => {
@@ -145,7 +118,7 @@ const mainClass = computed(() => (isHome.value ? 'pa-0 home-main' : 'default-mai
 const appBarClass = computed(() =>
   route.path === '/' || isArtworkDetail.value
     ? 'app-bar-ghost app-bar-home'
-    : 'app-bar-ghost app-bar-default'
+    : 'app-bar-ghost app-bar-default',
 )
 </script>
 
@@ -226,7 +199,6 @@ const appBarClass = computed(() =>
 .app-bar-home .app-bar-subtitle {
   color: rgba(255, 255, 255, 0.94) !important;
 }
-
 
 .app-bar-default :deep(.v-btn),
 .app-bar-default :deep(.v-toolbar-title),

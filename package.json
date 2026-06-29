@@ -3,11 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare": "nuxt prepare",
+    "prepare": "nuxt prepare && husky",
     "build": "node scripts/clear-oss-ts.mjs && nuxt build",
     "dev": "nuxt dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "migrate:mongo": "node scripts/migrate-mongo-to-supabase.mjs"
@@ -36,8 +38,18 @@
     "@types/node": "^22.10.0",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "mongodb": "^7.4.0",
+    "prettier": "^3.9.1",
     "typescript": "^5.6.3",
     "vue-tsc": "^2.1.6"
+  },
+  "lint-staged": {
+    "*.{vue,ts,js,mjs,css,json,md}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   }
 }

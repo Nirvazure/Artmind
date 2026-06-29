@@ -12,10 +12,7 @@ function isImage(filename: string): boolean {
 /**
  * 将图片压缩至 1MB 以内，非图片或失败时返回原 buffer
  */
-export async function compressImageToUnder1MB(
-  buffer: Buffer,
-  filename: string
-): Promise<Buffer> {
+export async function compressImageToUnder1MB(buffer: Buffer, filename: string): Promise<Buffer> {
   if (!isImage(filename) || buffer.length <= MAX_BYTES) {
     return buffer
   }

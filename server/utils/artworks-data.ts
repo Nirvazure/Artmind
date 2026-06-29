@@ -99,7 +99,7 @@ export async function insertArtwork(artwork: Artwork): Promise<Artwork> {
 
 export async function updateArtwork(
   id: string,
-  update: { likes?: string[]; analysisResult?: ArtworkAnalysisResult }
+  update: { likes?: string[]; analysisResult?: ArtworkAnalysisResult },
 ): Promise<Artwork | null> {
   const supabase = getSupabaseAdmin()
 
@@ -121,9 +121,9 @@ export async function updateArtwork(
     const toAdd = newIds.filter((uid) => !oldIds.includes(uid))
     const toRemove = oldIds.filter((uid) => !newIds.includes(uid))
     if (toAdd.length) {
-      const { error } = await supabase.from('artwork_likes').insert(
-        toAdd.map((user_id) => ({ artwork_id: id, user_id }))
-      )
+      const { error } = await supabase
+        .from('artwork_likes')
+        .insert(toAdd.map((user_id) => ({ artwork_id: id, user_id })))
       if (error) throw error
     }
     for (const user_id of toRemove) {

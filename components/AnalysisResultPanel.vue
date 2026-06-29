@@ -3,16 +3,9 @@
     <Transition name="fade-swap" mode="out-in">
       <div v-if="viewPhase === 'analyzing'" key="loading" class="glass-content analyzing-wrap">
         <div class="analyzing-portrait-wrap">
-          <v-img
-            :src="VINCENT_LOADING_IMAGE_URL"
-            alt="梵高"
-            cover
-            class="analyzing-portrait"
-          />
+          <v-img :src="VINCENT_LOADING_IMAGE_URL" alt="梵高" cover class="analyzing-portrait" />
         </div>
-        <p class="analyzing-caption">
-          正在掀起梵高的棺材板
-        </p>
+        <p class="analyzing-caption">正在掀起梵高的棺材板</p>
       </div>
       <div v-else-if="result" key="result" class="glass-content">
         <div class="glass-section glass-section-output">
@@ -42,17 +35,16 @@
           <div v-show="outputMode === 'polished'" class="glass-chart-row">
             <StyleRingChart :styles="result.styles" />
             <div class="style-labels">
-              <div
-                v-for="(s, i) in result.styles.slice(0, 3)"
-                :key="i"
-                class="style-label"
-              >
+              <div v-for="(s, i) in result.styles.slice(0, 3)" :key="i" class="style-label">
                 <span class="style-name">{{ s.name }}</span>
                 <span class="style-pct">{{ (s.confidence * 100).toFixed(0) }}%</span>
               </div>
             </div>
           </div>
-          <div v-show="outputMode === 'raw' && (result.rawLabels?.length ?? 0) > 0" class="raw-labels mt-2">
+          <div
+            v-show="outputMode === 'raw' && (result.rawLabels?.length ?? 0) > 0"
+            class="raw-labels mt-2"
+          >
             <p class="raw-labels-title">模型原始输出</p>
             <div class="raw-labels-list">
               <div
@@ -302,7 +294,12 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
   text-align: center;
   letter-spacing: 0.02em;
   color: transparent;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0.55) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -341,7 +338,9 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
 
 .fade-swap-enter-active,
 .fade-swap-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .fade-swap-enter-from,

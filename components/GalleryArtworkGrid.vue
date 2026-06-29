@@ -53,15 +53,11 @@ const auth = useAuth()
 const artworkStore = useArtworkStore()
 
 const filteredArtworks = computed(() =>
-  props.filterStyle
-    ? props.artworks.filter((a) => a.style === props.filterStyle)
-    : props.artworks
+  props.filterStyle ? props.artworks.filter((a) => a.style === props.filterStyle) : props.artworks,
 )
 
 const visibleCount = ref(BATCH_SIZE)
-const visibleItems = computed(() =>
-  filteredArtworks.value.slice(0, visibleCount.value)
-)
+const visibleItems = computed(() => filteredArtworks.value.slice(0, visibleCount.value))
 
 const sentinelRef = ref<HTMLElement | null>(null)
 const columnWidth = ref(280)
@@ -105,7 +101,7 @@ onMounted(() => {
         visibleCount.value += BATCH_SIZE
       }
     },
-    { rootMargin: '100px', threshold: 0 }
+    { rootMargin: '100px', threshold: 0 },
   )
 
   const sentinel = sentinelRef.value

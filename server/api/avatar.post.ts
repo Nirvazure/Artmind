@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const url = await saveFile(
     Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data),
     filename,
-    'avatars'
+    'avatars',
   )
   return { url }
 })

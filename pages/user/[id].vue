@@ -11,7 +11,11 @@
       <aside v-if="isDesktop" class="user-sidebar">
         <UserProfileHeader
           :user="auth.user.value"
-          :stats="{ analyzed: analyzedArtworks.length, gallery: myArtworks.length, collected: myCollectedArtworks.length }"
+          :stats="{
+            analyzed: analyzedArtworks.length,
+            gallery: myArtworks.length,
+            collected: myCollectedArtworks.length,
+          }"
           :variant="'sidebar'"
           @avatar-success="onAvatarSuccess"
         />
@@ -20,7 +24,11 @@
         <template v-if="!isDesktop">
           <UserProfileHeader
             :user="auth.user.value"
-            :stats="{ analyzed: analyzedArtworks.length, gallery: myArtworks.length, collected: myCollectedArtworks.length }"
+            :stats="{
+              analyzed: analyzedArtworks.length,
+              gallery: myArtworks.length,
+              collected: myCollectedArtworks.length,
+            }"
             :variant="'stacked'"
             @avatar-success="onAvatarSuccess"
           />
@@ -30,26 +38,27 @@
           <v-tabs v-model="activeTab" grow>
             <v-tab value="analyze">
               分析记录
-              <span class="text-caption text-medium-emphasis ms-1">({{ analyzedArtworks.length }} 条)</span>
+              <span class="text-caption text-medium-emphasis ms-1"
+                >({{ analyzedArtworks.length }} 条)</span
+              >
             </v-tab>
             <v-tab value="gallery">
               我的画廊
-              <span class="text-caption text-medium-emphasis ms-1">({{ myArtworks.length }} 幅)</span>
+              <span class="text-caption text-medium-emphasis ms-1"
+                >({{ myArtworks.length }} 幅)</span
+              >
             </v-tab>
             <v-tab value="collection">
               我的收藏
-              <span class="text-caption text-medium-emphasis ms-1">({{ myCollectedArtworks.length }} 幅)</span>
+              <span class="text-caption text-medium-emphasis ms-1"
+                >({{ myCollectedArtworks.length }} 幅)</span
+              >
             </v-tab>
           </v-tabs>
           <v-divider />
           <v-window v-model="activeTab">
             <v-window-item value="analyze">
-              <v-alert
-                type="info"
-                variant="tonal"
-                density="comfortable"
-                class="ma-4 mb-0"
-              >
+              <v-alert type="info" variant="tonal" density="comfortable" class="ma-4 mb-0">
                 临时上传图片（temp）会在 1 天内自动删除，请及时保存到画廊。
               </v-alert>
               <v-list v-if="analyzedArtworks.length" lines="two">
@@ -61,9 +70,7 @@
                   :to="`/${item.id}?analyse=true`"
                 />
               </v-list>
-              <v-card-text v-else class="text-medium-emphasis">
-                暂无分析记录
-              </v-card-text>
+              <v-card-text v-else class="text-medium-emphasis"> 暂无分析记录 </v-card-text>
             </v-window-item>
             <v-window-item value="gallery">
               <v-card-text>
@@ -93,9 +100,7 @@
                     </template>
                   </MasonryWall>
                 </div>
-                <div v-else class="text-medium-emphasis">
-                  暂无已保存画作
-                </div>
+                <div v-else class="text-medium-emphasis">暂无已保存画作</div>
               </v-card-text>
             </v-window-item>
             <v-window-item value="collection">
@@ -126,16 +131,13 @@
                     </template>
                   </MasonryWall>
                 </div>
-                <div v-else class="text-medium-emphasis">
-                  暂无收藏
-                </div>
+                <div v-else class="text-medium-emphasis">暂无收藏</div>
               </v-card-text>
             </v-window-item>
           </v-window>
         </v-card>
       </main>
     </div>
-
   </div>
 </template>
 
@@ -241,7 +243,9 @@ async function onAvatarSuccess(url: string) {
   overflow: hidden;
   background: color-mix(in srgb, rgb(var(--v-theme-surface)) 90%, transparent);
   border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .gallery-card-link:hover {

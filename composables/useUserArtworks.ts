@@ -23,7 +23,7 @@ export function useUserArtworks(userId: Ref<string | undefined> | ComputedRef<st
         .order('created_at', { ascending: false })
       if (galleryError) throw galleryError
       myArtworks.value = (galleryData ?? []).map((row) =>
-        mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0])
+        mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0]),
       )
 
       const { data: likesData, error: likesError } = await supabase
@@ -43,7 +43,7 @@ export function useUserArtworks(userId: Ref<string | undefined> | ComputedRef<st
         .order('created_at', { ascending: false })
       if (collectedError) throw collectedError
       myCollectedArtworks.value = (collectedData ?? []).map((row) =>
-        mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0])
+        mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0]),
       )
     } finally {
       loading.value = false
@@ -52,9 +52,7 @@ export function useUserArtworks(userId: Ref<string | undefined> | ComputedRef<st
 
   watch(userId, fetchUserArtworks, { immediate: true })
 
-  const analyzedArtworks = computed(() =>
-    myArtworks.value.filter((item) => !!item.analysisResult)
-  )
+  const analyzedArtworks = computed(() => myArtworks.value.filter((item) => !!item.analysisResult))
 
   return {
     myArtworks,

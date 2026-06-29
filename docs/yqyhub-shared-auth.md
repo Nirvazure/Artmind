@@ -6,13 +6,13 @@
 
 ## 1. 设计原则
 
-| 原则 | 说明 |
-|------|------|
-| **一个项目，一套用户** | 所有应用共用 YQYHub 的 `auth.users`，不在各应用单独维护登录体系 |
-| **一应用一 Schema** | 业务表放在独立 Postgres schema（如 `rapperank`、`myapp`），禁止与其他应用混用 `public` |
-| **Auth 与业务分离** | 身份在 `auth` schema；资料、订单、内容在各应用 schema |
-| **密钥分级** | 浏览器只用 Publishable / Anon Key；`service_role` 仅服务端 |
-| **权限显式建模** | 用 RLS 或服务端鉴权二选一（或组合），禁止「裸连库且无校验」 |
+| 原则                   | 说明                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| **一个项目，一套用户** | 所有应用共用 YQYHub 的 `auth.users`，不在各应用单独维护登录体系                        |
+| **一应用一 Schema**    | 业务表放在独立 Postgres schema（如 `rapperank`、`myapp`），禁止与其他应用混用 `public` |
+| **Auth 与业务分离**    | 身份在 `auth` schema；资料、订单、内容在各应用 schema                                  |
+| **密钥分级**           | 浏览器只用 Publishable / Anon Key；`service_role` 仅服务端                             |
+| **权限显式建模**       | 用 RLS 或服务端鉴权二选一（或组合），禁止「裸连库且无校验」                            |
 
 ### 架构示意
 
@@ -42,11 +42,11 @@ flowchart TB
 
 ### YQYHub 项目信息（固定）
 
-| 项 | 值 |
-|----|-----|
-| 项目名 | YQYHub |
-| Project Ref | `tfvzcuksahcofooqqezx` |
-| Region | `ap-southeast-1` |
+| 项          | 值                                                                         |
+| ----------- | -------------------------------------------------------------------------- |
+| 项目名      | YQYHub                                                                     |
+| Project Ref | `tfvzcuksahcofooqqezx`                                                     |
+| Region      | `ap-southeast-1`                                                           |
 | Pooler Host | `aws-1-ap-southeast-1.pooler.supabase.com`（注意是 **aws-1**，不是 aws-0） |
 
 从 Dashboard → **Project Settings → API** 获取：
@@ -97,10 +97,10 @@ model Profile {
 
 ### 2.3 用户身份字段约定
 
-| 字段 | 类型 | 含义 |
-|------|------|------|
+| 字段           | 类型             | 含义                                           |
+| -------------- | ---------------- | ---------------------------------------------- |
 | `auth_user_id` | `uuid` 或 `text` | 对应 `auth.users.id`，**登录用户的唯一关联键** |
-| 应用内 `id` | `cuid` / `uuid` | 本 schema 业务主键（可选，与 auth 分离） |
+| 应用内 `id`    | `cuid` / `uuid`  | 本 schema 业务主键（可选，与 auth 分离）       |
 
 **规则：**
 
@@ -208,11 +208,11 @@ src/lib/supabase/
 **服务端获取当前用户（RSC / API）：**
 
 ```ts
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function getAuthUser() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -220,17 +220,18 @@ export async function getAuthUser() {
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options),
-          );
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
         },
       },
     },
-  );
+  )
 
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-  return user;
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+  if (error || !user) return null
+  return user
 }
 ```
 
@@ -256,12 +257,12 @@ export async function getAuthUser() {
 
 ```ts
 export async function POST(request: Request) {
-  const user = await getAuthUser();
+  const user = await getAuthUser()
   if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const authUserId = user.id;
+  const authUserId = user.id
   // prisma.xxx.findMany({ where: { authUserId } })
 }
 ```
@@ -312,11 +313,11 @@ CREATE INDEX profiles_auth_user_id_idx ON myapp.profiles (auth_user_id);
 
 ### 7.1 何时用 RLS
 
-| 场景 | 建议 |
-|------|------|
-| 浏览器通过 `supabase-js` 直连表 | **必须** RLS + `auth.uid()` |
+| 场景                             | 建议                                |
+| -------------------------------- | ----------------------------------- |
+| 浏览器通过 `supabase-js` 直连表  | **必须** RLS + `auth.uid()`         |
 | 仅 Prisma / 服务端 postgres 连接 | 应用层鉴权为主；可选 RLS 作纵深防御 |
-| `service_role` 脚本 | 绕过 RLS，仅限受信环境 |
+| `service_role` 脚本              | 绕过 RLS，仅限受信环境              |
 
 ### 7.2 RLS 策略示例
 
@@ -347,12 +348,12 @@ Table Editor 默认显示 `public`。业务数据在自定义 schema 时：
 
 ## 8. 跨应用与「单点登录」预期
 
-| 场景 | 行为 |
-|------|------|
-| 同一 Supabase 项目、同一邮箱注册 | **同一 `auth.users` 记录**，各应用共用账号 |
-| 不同子域 `*.nirvazure.cn` | 可配置 cookie `domain=.nirvazure.cn` 改善体验 |
-| 完全不同顶级域 | **各站独立 session**；账号密码相同，但通常需各站分别登录 |
-| 一次登录全站免登 | Supabase **不内置**跨顶级域 SSO，需自建门户或统一 IdP |
+| 场景                             | 行为                                                     |
+| -------------------------------- | -------------------------------------------------------- |
+| 同一 Supabase 项目、同一邮箱注册 | **同一 `auth.users` 记录**，各应用共用账号               |
+| 不同子域 `*.nirvazure.cn`        | 可配置 cookie `domain=.nirvazure.cn` 改善体验            |
+| 完全不同顶级域                   | **各站独立 session**；账号密码相同，但通常需各站分别登录 |
+| 一次登录全站免登                 | Supabase **不内置**跨顶级域 SSO，需自建门户或统一 IdP    |
 
 ---
 
@@ -401,10 +402,10 @@ Table Editor 默认显示 `public`。业务数据在自定义 schema 时：
 
 ## 11. 应用注册表（维护）
 
-| 应用 | Schema | 生产域名 | Auth 模式 | 备注 |
-|------|--------|----------|-----------|------|
+| 应用       | Schema      | 生产域名               | Auth 模式                     | 备注              |
+| ---------- | ----------- | ---------------------- | ----------------------------- | ----------------- |
 | RapperRank | `rapperank` | rapperank.nirvazure.cn | B（匿名，待迁 Supabase Auth） | 66 rappers seeded |
-| ArtMind | `artmind` | artmind.nirvazure.cn | Supabase Client + RLS | GitHub OAuth 待配 |
+| ArtMind    | `artmind`   | artmind.nirvazure.cn   | Supabase Client + RLS         | GitHub OAuth 待配 |
 
 每新增应用请在本表登记一行，并在 Redirect URLs 中追加域名。
 

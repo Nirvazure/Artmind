@@ -59,7 +59,7 @@ const props = withDefaults(
     filterPainter: string | null
     compact?: boolean
   }>(),
-  { compact: false, styleCoverMap: () => ({}) }
+  { compact: false, styleCoverMap: () => ({}) },
 )
 
 const emit = defineEmits<{
@@ -97,7 +97,7 @@ watch(
       selected.value = null
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function onSelect(val: string | null) {
