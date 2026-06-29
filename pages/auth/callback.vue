@@ -17,43 +17,32 @@ const auth = useAuth()
 const loading = ref(true)
 const message = ref('处理登录中…')
 
-/** 等待 Supabase 客户端（detectSessionInUrl）完成 code 兑换 */
-async function waitForAuthUser(timeoutMs = 4000): Promise<boolean> {
-  const start = Date.now()
-  while (Date.now() - start < timeoutMs) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (user) return true
-    await new Promise((resolve) => setTimeout(resolve, 150))
+async function waitForAuthReady(timeoutMs = 5000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (!auth.loading.value) return !!auth.user.value
+    await new Promise((resolve) => setTimeout(resolve, 50))
   }
-  return false
+  return !!auth.user.value
 }
 
 onMounted(async () => {
   try {
-    let authenticated = await waitForAuthUser()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    // 自动兑换未生效时，再手动 exchange（仅当 URL 仍带 code 且无 session）
-    if (!authenticated && typeof route.query.code === 'string') {
+    if (!session && typeof route.query.code === 'string') {
       const { error } = await supabase.auth.exchangeCodeForSession(route.query.code)
-      if (error) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        authenticated = !!user
-        if (!authenticated) throw error
-      } else {
-        authenticated = true
-      }
+      if (error) throw error
     }
 
-    if (!authenticated) {
+    const ok = await waitForAuthReady()
+    if (!ok) {
       message.value = '未获取到登录信息，请重新登录'
       return
     }
 
-    await auth.init()
     message.value = '登录成功，正在跳转…'
     await nextTick()
     await router.replace('/')
