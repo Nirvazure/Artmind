@@ -26,7 +26,10 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', href: '/icon.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700&display=swap' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700&display=swap',
+        },
       ],
     },
     defaultLayout: 'home',
@@ -38,8 +41,16 @@ export default defineNuxtConfig({
     ossBucket: (process.env.OSS_BUCKET || '').trim(),
     ossAccessKeyId: (process.env.OSS_ACCESS_KEY_ID || '').trim(),
     ossAccessKeySecret: (process.env.OSS_ACCESS_KEY_SECRET || '').trim(),
-    paintingInferenceUrl: (process.env.PAINTING_INFERENCE_URL || process.env.NUXT_PAINTING_INFERENCE_URL || '').trim(),
-    paintingPredictPath: (process.env.PAINTING_PREDICT_PATH || process.env.NUXT_PAINTING_PREDICT_PATH || '/predict').trim(),
+    paintingInferenceUrl: (
+      process.env.PAINTING_INFERENCE_URL ||
+      process.env.NUXT_PAINTING_INFERENCE_URL ||
+      ''
+    ).trim(),
+    paintingPredictPath: (
+      process.env.PAINTING_PREDICT_PATH ||
+      process.env.NUXT_PAINTING_PREDICT_PATH ||
+      '/predict'
+    ).trim(),
   },
   experimental: {
     appManifest: false,

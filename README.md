@@ -11,6 +11,7 @@ ArtMind 是一个由 AI 驱动的 Nuxt 3 Web 应用。核心能力包括：作�
 当前使用 **keremberke/yolov8m-painting-classification**（Hugging Face Space）进行 27 种艺术流派分类，需配置 `PAINTING_INFERENCE_URL`。作品与用户数据存储在 **YQYHub Supabase** 的 `artmind` schema，图片与头像存储在 **阿里云 OSS**。
 
 **近期更新（2026-06）**
+
 - 认证迁移：Authing → Supabase Auth（GitHub OAuth）
 - 数据迁移：MongoDB → Supabase Postgres（profiles / artworks / artwork_likes / uploads / analysis_logs）
 - 画廊列表、收藏、资料更新改为客户端直连 Supabase（RLS）；Nitro 保留 classify / upload / avatar / 保存作品
@@ -21,29 +22,29 @@ ArtMind 是一个由 AI 驱动的 Nuxt 3 Web 应用。核心能力包括：作�
 
 ## 功能概览
 
-| 当前实现 | 规划中 |
-|----------|--------|
-| **首页**：`/` 随机重定向到 `/:id`，默认浏览态（画作居中、背景模糊） | — |
-| **分析模式**：`/:id?analyse=true` 上传、分析、修正流派/画家并保存到画廊 | — |
-| **画廊**：瀑布流作品展示、App Bar 流派/画家搜索筛选、登录后可收藏 | 作品编辑（标题/公开性等） |
-| **个人主页**：`/user/:id` 分析记录、我的画廊、我的收藏；头像/昵称可编辑 | 他人主页可见性、分页聚合 API |
-| **AI 分析**：27 种流派分类、环形图、画家卡片、润色/原始输出切换 | — |
+| 当前实现                                                                | 规划中                                         |
+| ----------------------------------------------------------------------- | ---------------------------------------------- |
+| **首页**：`/` 随机重定向到 `/:id`，默认浏览态（画作居中、背景模糊）     | —                                              |
+| **分析模式**：`/:id?analyse=true` 上传、分析、修正流派/画家并保存到画廊 | —                                              |
+| **画廊**：瀑布流作品展示、App Bar 流派/画家搜索筛选、登录后可收藏       | 作品编辑（标题/公开性等）                      |
+| **个人主页**：`/user/:id` 分析记录、我的画廊、我的收藏；头像/昵称可编辑 | 他人主页可见性、分页聚合 API                   |
+| **AI 分析**：27 种流派分类、环形图、画家卡片、润色/原始输出切换         | —                                              |
 | **认证**：Supabase Auth（GitHub OAuth）；保存作品、收藏、头像上传需鉴权 | 权限控制与审核员机制（`profiles.role` 已预留） |
 
 ---
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 前端 | Vue 3、Nuxt 3、Vuetify 3、Pinia、@vueuse/motion |
-| UI 组件 | @yeger/vue-masonry-wall（瀑布流）、vue-chartjs / Chart.js（环形图） |
-| 后端 | Nitro（AI 分类、图片压缩、OSS 写入） |
-| 认证与数据 | YQYHub Supabase Auth + `artmind` schema Postgres（RLS） |
-| 图片存储 | 阿里云 OSS（temp / artworks / avatars） |
-| 图片处理 | sharp（上传压缩）、服务端尺寸读取 |
-| AI | Hugging Face Space（keremberke 艺术流派分类） |
-| 部署 | Vercel（`nitro.vercel.functions.maxDuration: 180`） |
+| 层级       | 技术                                                                |
+| ---------- | ------------------------------------------------------------------- |
+| 前端       | Vue 3、Nuxt 3、Vuetify 3、Pinia、@vueuse/motion                     |
+| UI 组件    | @yeger/vue-masonry-wall（瀑布流）、vue-chartjs / Chart.js（环形图） |
+| 后端       | Nitro（AI 分类、图片压缩、OSS 写入）                                |
+| 认证与数据 | YQYHub Supabase Auth + `artmind` schema Postgres（RLS）             |
+| 图片存储   | 阿里云 OSS（temp / artworks / avatars）                             |
+| 图片处理   | sharp（上传压缩）、服务端尺寸读取                                   |
+| AI         | Hugging Face Space（keremberke 艺术流派分类）                       |
+| 部署       | Vercel（`nitro.vercel.functions.maxDuration: 180`）                 |
 
 ---
 
@@ -249,6 +250,7 @@ OSS_ACCESS_KEY_SECRET=
 5. 部署命令默认 `yarn build`（或 `npm run build`）
 
 **已处理的 serverless 兼容项**
+
 - `nitro.externals` 外置 ali-oss / debug，inline lodash
 - 画家数据内联为 `painters-list.ts`，不依赖运行时读文件
 - classify 对相对图片路径转为绝对 URL 后 HTTP 拉取
@@ -272,15 +274,15 @@ git checkout <移除前的 commit> -- server/python
 
 ## API 概览
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/classify` | 图片风格分类（multipart 或 JSON `imageUrl`） |
-| POST | `/api/upload` | 上传图片至 OSS temp/ |
-| POST | `/api/artworks` | 新增作品（需鉴权，temp → artworks 复制） |
-| POST | `/api/avatar` | 头像上传（需鉴权） |
-| GET | `/api/painters` | 艺术家列表（含 verified） |
-| GET | `/api/models` | 27 种流派名 |
-| GET | `/api/style-covers` | 流派封面映射 |
+| 方法 | 路径                | 说明                                         |
+| ---- | ------------------- | -------------------------------------------- |
+| POST | `/api/classify`     | 图片风格分类（multipart 或 JSON `imageUrl`） |
+| POST | `/api/upload`       | 上传图片至 OSS temp/                         |
+| POST | `/api/artworks`     | 新增作品（需鉴权，temp → artworks 复制）     |
+| POST | `/api/avatar`       | 头像上传（需鉴权）                           |
+| GET  | `/api/painters`     | 艺术家列表（含 verified）                    |
+| GET  | `/api/models`       | 27 种流派名                                  |
+| GET  | `/api/style-covers` | 流派封面映射                                 |
 
 画廊列表、单条作品、收藏、资料更新通过 **Supabase 客户端 + RLS** 完成，不再经 Nitro REST。
 
@@ -289,6 +291,7 @@ git checkout <移除前的 commit> -- server/python
 ## 路线图
 
 **已完成**
+
 - [x] 首页随机作品 + 作品页浏览/分析双态（`/:id`、`?analyse=true`）
 - [x] 画廊瀑布流、流派/画家 App Bar 筛选、收藏
 - [x] AnalysisResultPanel（环形图、画家卡片、润色/原始输出、梵高加载态）
@@ -298,6 +301,7 @@ git checkout <移除前的 commit> -- server/python
 - [x] 移除 `server/python`，改用 HF Space
 
 **待完成**（详见 [TODO.md](./TODO.md)）
+
 - [ ] 生产环境环境变量与 OSS 生命周期验收
 - [ ] 权限控制与审核员机制
 - [ ] 用户主页聚合 API（分页/筛选/统计）

@@ -4,19 +4,21 @@
     v-motion
     class="artwork-card"
     :initial="{ opacity: 0, y: 20 }"
-    :enter="{ opacity: 1, y: 0, transition: { delay: 50 * Math.min(index, 12), duration: 350, easing: 'ease-out' } }"
+    :enter="{
+      opacity: 1,
+      y: 0,
+      transition: { delay: 50 * Math.min(index, 12), duration: 350, easing: 'ease-out' },
+    }"
     @click="$emit('click')"
   >
     <div
       class="artwork-card-image"
-      :style="{ aspectRatio: item.imageWidth && item.imageHeight ? (item.imageWidth / item.imageHeight) : (4/3) }"
+      :style="{
+        aspectRatio:
+          item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 4 / 3,
+      }"
     >
-      <v-img
-        :src="item.imageUrl"
-        :alt="item.title"
-        contain
-        class="artwork-img"
-      />
+      <v-img :src="item.imageUrl" :alt="item.title" contain class="artwork-img" />
     </div>
     <v-btn
       v-if="showCollect"
@@ -62,7 +64,7 @@ withDefaults(
     isCollected: boolean
     showCollect?: boolean
   }>(),
-  { showCollect: true }
+  { showCollect: true },
 )
 
 defineEmits<{
@@ -98,7 +100,9 @@ onUnmounted(() => {
   background: color-mix(in srgb, rgb(var(--v-theme-surface)) 90%, transparent);
   border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   min-height: 44px;
   position: relative;
 }
@@ -141,7 +145,12 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.35) 40%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.35) 40%,
+    transparent 100%
+  );
   opacity: 0;
   transition: opacity 0.25s ease;
   pointer-events: none;

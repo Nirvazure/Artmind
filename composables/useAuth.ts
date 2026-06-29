@@ -12,35 +12,48 @@ export function useAuth() {
   const loading = useState<boolean>('auth-loading', () => true)
 
   async function loadProfile() {
-    if (!supabaseUser.value?.id) {
+    const {
+      data: { user: authUser },
+      error,
+    } = await supabase.auth.getUser()
+    if (error || !authUser?.id) {
       user.value = null
       return
     }
+
     const { data } = await supabase
       .from('profiles')
       .select('display_name, avatar_url')
-      .eq('id', supabaseUser.value.id)
+      .eq('id', authUser.id)
       .maybeSingle()
+
+    const meta = authUser.user_metadata
     user.value = {
-      id: supabaseUser.value.id,
-      name: data?.display_name
-        ?? supabaseUser.value.user_metadata?.full_name
-        ?? supabaseUser.value.user_metadata?.name
-        ?? supabaseUser.value.email?.split('@')[0]
-        ?? '用户',
-      photo: data?.avatar_url ?? supabaseUser.value.user_metadata?.avatar_url ?? undefined,
+      id: authUser.id,
+      name:
+        data?.display_name ??
+        meta?.full_name ??
+        meta?.name ??
+        meta?.user_name ??
+        authUser.email?.split('@')[0] ??
+        '用户',
+      photo: data?.avatar_url ?? meta?.avatar_url ?? meta?.picture ?? undefined,
     }
   }
 
   if (import.meta.client) {
-    watch(supabaseUser, async () => {
-      loading.value = true
-      try {
-        await loadProfile()
-      } finally {
-        loading.value = false
-      }
-    }, { immediate: true })
+    watch(
+      supabaseUser,
+      async () => {
+        loading.value = true
+        try {
+          await loadProfile()
+        } finally {
+          loading.value = false
+        }
+      },
+      { immediate: true },
+    )
   }
 
   const isAuthenticated = computed(() => !!user.value?.id)
@@ -49,7 +62,6 @@ export function useAuth() {
     if (import.meta.server) return
     loading.value = true
     try {
-      await supabase.auth.getSession()
       await loadProfile()
     } catch {
       user.value = null

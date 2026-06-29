@@ -9,7 +9,7 @@ const TIMEOUT_MS = 180000
  */
 export async function callPaintingInference(
   imageBuffer: Buffer,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<Array<{ label: string; score: number }> | null> {
   const config = useRuntimeConfig()
   const path = (config.paintingPredictPath as string)?.replace(/^\//, '') || 'predict'
@@ -31,7 +31,8 @@ export async function callPaintingInference(
     return res
   } catch (e) {
     const err = e as Error & { statusCode?: number; data?: unknown }
-    const statusCode = err.statusCode ?? (err as { response?: { status?: number } }).response?.status
+    const statusCode =
+      err.statusCode ?? (err as { response?: { status?: number } }).response?.status
     const detail = err.data ?? (err as { response?: { _data?: unknown } }).response?._data
     const snippet =
       typeof detail === 'string'
@@ -43,7 +44,7 @@ export async function callPaintingInference(
       '[Painting] Request failed:',
       err.message,
       statusCode ? `status=${statusCode}` : '',
-      snippet ? `body=${snippet}` : ''
+      snippet ? `body=${snippet}` : '',
     )
     throw createError({
       statusCode: 503,

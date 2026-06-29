@@ -33,7 +33,7 @@ function getBaseUrl(): string {
 export async function saveFile(
   buffer: Buffer,
   filename: string,
-  prefix: Prefix = 'temp'
+  prefix: Prefix = 'temp',
 ): Promise<string> {
   const bufferToSave = await compressImageToUnder1MB(buffer, filename)
   const client = getClient()

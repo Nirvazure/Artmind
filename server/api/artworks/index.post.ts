@@ -44,10 +44,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const supabase = getSupabaseAdmin()
-    await supabase
-      .from('uploads')
-      .update({ saved: true })
-      .eq('temp_path', body.imageUrl)
+    await supabase.from('uploads').update({ saved: true }).eq('temp_path', body.imageUrl)
   } catch {
     // uploads 标记失败不影响保存
   }

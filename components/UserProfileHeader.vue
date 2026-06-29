@@ -1,12 +1,6 @@
 <template>
   <div class="profile-header" :class="[`variant-${variant}`]">
-    <input
-      ref="fileInputRef"
-      type="file"
-      accept="image/*"
-      class="d-none"
-      @change="onFileSelect"
-    >
+    <input ref="fileInputRef" type="file" accept="image/*" class="d-none" @change="onFileSelect" />
     <!-- stacked: 顶栏头图 + 头像区 -->
     <template v-if="variant === 'stacked'">
       <div class="cover" aria-hidden="true">
@@ -15,18 +9,37 @@
           <polygon fill="#6b5b4f" opacity="0.18" points="0,140 120,40 240,100 400,20 400,140" />
           <rect fill="#2e2c2a" opacity="0.08" x="0" y="60" width="180" height="80" />
           <circle fill="#5c5046" opacity="0.1" cx="320" cy="50" r="60" />
-          <line x1="0" y1="90" x2="400" y2="90" stroke="#5c5046" stroke-opacity="0.08" stroke-width="1" />
+          <line
+            x1="0"
+            y1="90"
+            x2="400"
+            y2="90"
+            stroke="#5c5046"
+            stroke-opacity="0.08"
+            stroke-width="1"
+          />
         </svg>
         <div class="cover-gradient" />
       </div>
       <div class="profile-body stacked-body">
         <div class="profile-main">
-          <button type="button" class="avatar-clickable avatar-wrap" :disabled="uploadingAvatar" @click="fileInputRef?.click()">
+          <button
+            type="button"
+            class="avatar-clickable avatar-wrap"
+            :disabled="uploadingAvatar"
+            @click="fileInputRef?.click()"
+          >
             <v-avatar size="72" class="profile-avatar" elevation="2">
               <v-img v-if="user?.photo" :src="user.photo" cover />
               <span v-else class="text-h5">{{ (user?.name || 'U').charAt(0) }}</span>
             </v-avatar>
-            <v-overlay :model-value="uploadingAvatar" contained scrim="rgba(255,255,255,0.7)" class="align-center justify-center" persistent>
+            <v-overlay
+              :model-value="uploadingAvatar"
+              contained
+              scrim="rgba(255,255,255,0.7)"
+              class="align-center justify-center"
+              persistent
+            >
               <v-progress-circular indeterminate size="32" />
             </v-overlay>
           </button>
@@ -41,8 +54,12 @@
                 @keydown.enter="saveName"
                 @keydown.escape="cancelEditName"
               />
-              <v-btn size="small" color="primary" :loading="savingName" @click="saveName">保存</v-btn>
-              <v-btn size="small" variant="text" :disabled="savingName" @click="cancelEditName">取消</v-btn>
+              <v-btn size="small" color="primary" :loading="savingName" @click="saveName"
+                >保存</v-btn
+              >
+              <v-btn size="small" variant="text" :disabled="savingName" @click="cancelEditName"
+                >取消</v-btn
+              >
               <p v-if="nameError" class="text-caption text-error">{{ nameError }}</p>
             </div>
             <div v-else class="d-flex align-center gap-1 flex-wrap">
@@ -55,11 +72,17 @@
           </div>
         </div>
         <div class="profile-stats">
-          <span class="stat-item"><strong>{{ stats.analyzed }}</strong> 条分析</span>
+          <span class="stat-item"
+            ><strong>{{ stats.analyzed }}</strong> 条分析</span
+          >
           <span class="stat-divider">|</span>
-          <span class="stat-item"><strong>{{ stats.gallery }}</strong> 幅画廊</span>
+          <span class="stat-item"
+            ><strong>{{ stats.gallery }}</strong> 幅画廊</span
+          >
           <span class="stat-divider">|</span>
-          <span class="stat-item"><strong>{{ stats.collected ?? 0 }}</strong> 幅收藏</span>
+          <span class="stat-item"
+            ><strong>{{ stats.collected ?? 0 }}</strong> 幅收藏</span
+          >
         </div>
       </div>
     </template>
@@ -81,12 +104,23 @@
         </svg>
       </div>
       <div class="sidebar-content">
-        <button type="button" class="avatar-clickable sidebar-avatar-wrap" :disabled="uploadingAvatar" @click="fileInputRef?.click()">
+        <button
+          type="button"
+          class="avatar-clickable sidebar-avatar-wrap"
+          :disabled="uploadingAvatar"
+          @click="fileInputRef?.click()"
+        >
           <v-avatar size="96" class="sidebar-avatar" elevation="4">
             <v-img v-if="user?.photo" :src="user.photo" cover />
             <span v-else class="text-h4">{{ (user?.name || 'U').charAt(0) }}</span>
           </v-avatar>
-          <v-overlay :model-value="uploadingAvatar" contained scrim="rgba(255,255,255,0.7)" class="align-center justify-center" persistent>
+          <v-overlay
+            :model-value="uploadingAvatar"
+            contained
+            scrim="rgba(255,255,255,0.7)"
+            class="align-center justify-center"
+            persistent
+          >
             <v-progress-circular indeterminate size="40" />
           </v-overlay>
         </button>
@@ -102,7 +136,9 @@
           />
           <div class="d-flex gap-1">
             <v-btn size="small" color="primary" :loading="savingName" @click="saveName">保存</v-btn>
-            <v-btn size="small" variant="text" :disabled="savingName" @click="cancelEditName">取消</v-btn>
+            <v-btn size="small" variant="text" :disabled="savingName" @click="cancelEditName"
+              >取消</v-btn
+            >
           </div>
           <p v-if="nameError" class="text-caption text-error mt-1">{{ nameError }}</p>
         </div>
@@ -152,7 +188,13 @@ const localName = ref('')
 const savingName = ref(false)
 const nameError = ref('')
 
-watch(() => props.user?.name, (v) => { localName.value = v ?? '' }, { immediate: true })
+watch(
+  () => props.user?.name,
+  (v) => {
+    localName.value = v ?? ''
+  },
+  { immediate: true },
+)
 
 async function saveName() {
   const name = localName.value.trim()

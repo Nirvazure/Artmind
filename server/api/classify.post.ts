@@ -58,9 +58,9 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
       model = modelField?.data?.toString()
     }
 
-  // multipart：用已有 buffer 直接推理，避免对 OSS URL 发起 HTTP 请求（私有桶会 403）
-  const result = await classify(imageBuffer ?? imageUrl, model)
-  const painters = getTopPaintersByStyle(result.topStyle, 3)
+    // multipart：用已有 buffer 直接推理，避免对 OSS URL 发起 HTTP 请求（私有桶会 403）
+    const result = await classify(imageBuffer ?? imageUrl, model)
+    const painters = getTopPaintersByStyle(result.topStyle, 3)
     if (process.env.NODE_ENV === 'development') {
       console.warn('[classify] 完成, source:', result.source, 'imageUrl:', imageUrl.slice(0, 50))
     }

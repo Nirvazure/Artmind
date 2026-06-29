@@ -28,9 +28,8 @@ const chartData = computed(() => {
     return { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
   }
   const sum = items.reduce((a, s) => a + s.confidence, 0)
-  const normalized = sum > 0
-    ? items.map((s) => Math.round((s.confidence / sum) * 100))
-    : items.map(() => 33)
+  const normalized =
+    sum > 0 ? items.map((s) => Math.round((s.confidence / sum) * 100)) : items.map(() => 33)
   return {
     labels: items.map((s) => s.name),
     datasets: [
