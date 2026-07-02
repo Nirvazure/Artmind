@@ -32,7 +32,6 @@ export default defineNuxtConfig({
         },
       ],
     },
-    defaultLayout: 'home',
   },
   css: ['~/assets/app.css'],
   runtimeConfig: {
@@ -55,7 +54,6 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
-  build: { transpile: ['vue-countup-v3'] },
   modules: ['@nuxt/eslint', '@pinia/nuxt', 'vuetify-nuxt-module', '@nuxtjs/supabase'],
   supabase: {
     // 作品页 /:id 为公开路由，禁用全局重定向；登录入口由 /login 与个人页自行控制

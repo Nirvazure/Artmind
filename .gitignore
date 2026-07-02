@@ -10,7 +10,6 @@ dist
 
 # Runtime data (created on first write)
 server/data/artworks.json
-scripts/mongo-artworks.export.json
 
 # Python
 server/python/data/

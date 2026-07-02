@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './supabase-admin'
+import type { Json } from '~/types/database.types'
 
 export interface ArtworkAnalysisResult {
   styles: { name: string; confidence: number }[]
@@ -89,7 +90,7 @@ export async function insertArtwork(artwork: Artwork): Promise<Artwork> {
       image_height: artwork.imageHeight ?? null,
       is_public: artwork.isPublic ?? true,
       status: 'published',
-      analysis_result: artwork.analysisResult ?? null,
+      analysis_result: (artwork.analysisResult ?? null) as unknown as Json,
     })
     .select()
     .single()
@@ -106,7 +107,7 @@ export async function updateArtwork(
   if (update.analysisResult !== undefined) {
     const { error } = await supabase
       .from('artworks')
-      .update({ analysis_result: update.analysisResult })
+      .update({ analysis_result: update.analysisResult as unknown as Json })
       .eq('id', id)
     if (error) throw error
   }

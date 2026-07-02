@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, type ChartOptions } from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
@@ -43,7 +43,7 @@ const chartData = computed(() => {
   }
 })
 
-const options = {
+const options: ChartOptions<'doughnut'> = {
   responsive: true,
   maintainAspectRatio: false,
   cutout: '70%',
@@ -51,7 +51,10 @@ const options = {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (ctx: { label: string; raw: number }) => `${ctx.label}: ${ctx.raw}%`,
+        label: (ctx) => {
+          const raw = typeof ctx.raw === 'number' ? ctx.raw : Number(ctx.raw)
+          return `${ctx.label}: ${raw}%`
+        },
       },
     },
   },

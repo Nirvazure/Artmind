@@ -3,6 +3,7 @@ import { classify } from '../utils/classifier'
 import { getTopPaintersByStyle } from '../utils/painter-mapping'
 import { getUserIdFromToken } from '../utils/auth'
 import { getSupabaseAdmin } from '../utils/supabase-admin'
+import type { Json } from '~/types/database.types'
 import { randomUUID } from 'node:crypto'
 
 export interface ClassifyResult {
@@ -83,7 +84,7 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
             styles: result.styles,
             painters,
             rawLabels: result.rawLabels,
-          },
+          } as unknown as Json,
         })
       } catch {
         // analysis_logs 失败不影响分类结果
