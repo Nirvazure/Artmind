@@ -154,11 +154,21 @@ function onConfirm() {
   --ui-muted: rgba(244, 247, 251, 0.78);
   --ui-panel-bg: rgba(10, 14, 20, 0.44);
   --ui-panel-border: rgba(255, 255, 255, 0.28);
+  background: var(--ui-panel-bg) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
   overflow: hidden;
 }
 
 .save-dialog.glass-panel::before {
   z-index: 1;
+}
+
+.save-dialog-title,
+.save-dialog-body,
+.save-dialog-actions {
+  position: relative;
+  z-index: 2;
 }
 
 .save-dialog-title {
