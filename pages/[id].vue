@@ -86,7 +86,11 @@
               :model-styles-loading="modelStylesLoading"
               :saving-to-gallery="savingToGallery"
               :can-save-to-gallery="canSaveToGallery"
+              :current-artwork-id="id"
+              :is-existing-owned="isExistingOwned"
+              :updating="updatingArtwork"
               @save-to-gallery="saveToGallery"
+              @update-artwork="updateOwnedArtwork"
             />
           </section>
         </div>
@@ -119,6 +123,8 @@ const id = computed(() => route.params.id as string)
 const analyzeMode = computed(() => route.query.analyse === 'true')
 
 const artworkStore = useArtworkStore()
+const auth = useAuth()
+const toast = useToast()
 const { classifyByUrl, classifyByFile } = useClassifier()
 
 const artwork = ref<import('~/stores/artwork').Artwork | null>(null)
@@ -142,6 +148,7 @@ const modelStylesLoaded = ref(false)
 const modelStylesLoading = ref(false)
 const inFlightAnalyzeKey = ref<string | null>(null)
 const savingToGallery = ref(false)
+const updatingArtwork = ref(false)
 const outputMode = ref<'polished' | 'raw'>('polished')
 
 const result = computed(() => {
@@ -187,7 +194,14 @@ const frameAspectRatio = computed(() => {
 
 const canSwitch = computed(() => artworkStore.artworks.length > 1)
 const canAnalyze = computed(() => !!pendingFile.value || !!artwork.value?.imageUrl)
-const canSaveToGallery = computed(() => !!result.value && !loading.value && !savingToGallery.value)
+const canSaveToGallery = computed(
+  () => !!result.value && !loading.value && !savingToGallery.value && !isExistingOwned.value,
+)
+const isExistingOwned = computed(() => {
+  const a = artwork.value
+  const uid = auth.user.value?.id
+  return !!(a && uid && a.userId === uid && analyzeMode.value && !manualResult.value)
+})
 const aiTopStyle = computed(() => result.value?.styles[0]?.name?.trim() ?? '')
 const styleSelectItems = computed(() => {
   const items: Array<{ title: string; value: string }> = []
@@ -228,7 +242,9 @@ function syncEditableFromResult() {
   const a = artwork.value
   title.value = (a?.title || r.styles[0]?.name || '').trim()
   selectedStyle.value = (a?.style || r.styles[0]?.name || '').trim()
-  editablePainters.value = normalizePaintersInput(r.painters).slice(0, 3)
+  editablePainters.value = normalizePaintersInput(
+    a?.analysisResult?.painters?.length ? a.analysisResult.painters : r.painters,
+  ).slice(0, 3)
 }
 
 async function loadModelStyles() {
@@ -309,12 +325,22 @@ async function loadArtwork() {
       inFlightAnalyzeKey.value = autoKey
       try {
         const res = await classifyByUrl(a.imageUrl)
-        const updated = await artworkStore.updateArtworkAnalysis(a.id, {
-          styles: res.styles,
-          painters: res.painters,
-          rawLabels: res.rawLabels,
-        })
-        artwork.value = updated
+        const uid = auth.user.value?.id
+        if (uid && a.userId === uid) {
+          const updated = await artworkStore.updateArtworkAnalysis(a.id, {
+            styles: res.styles,
+            painters: res.painters,
+            rawLabels: res.rawLabels,
+          })
+          artwork.value = updated
+        } else {
+          manualResult.value = {
+            styles: res.styles,
+            painters: res.painters,
+            imageUrl: a.imageUrl,
+            rawLabels: res.rawLabels,
+          }
+        }
         syncEditableFromResult()
         await loadModelStyles()
       } finally {
@@ -383,24 +409,32 @@ async function analyze() {
   }
 }
 
-async function saveToGallery() {
+async function saveToGallery(draft?: {
+  title: string
+  selectedStyle: string
+  editablePainters: string[]
+}) {
   const r = result.value
   if (!r) return
   savingToGallery.value = true
   try {
-    const normalizedPainters = normalizePaintersInput(editablePainters.value)
+    const normalizedPainters = normalizePaintersInput(
+      draft?.editablePainters ?? editablePainters.value,
+    )
     const resolvedStyle = (
+      draft?.selectedStyle ||
       selectedStyle.value ||
       aiTopStyle.value ||
       r.styles[0]?.name ||
       ''
     ).trim()
-    const resolvedTitle = (title.value || resolvedStyle || '未命名').trim()
+    const resolvedTitle = (draft?.title || title.value || resolvedStyle || '未命名').trim()
     const created = await artworkStore.addArtwork({
       title: resolvedTitle,
       style: resolvedStyle,
       imageUrl: r.imageUrl,
-      isPublic: true,
+      isPublic: false,
+      aiPainters: r.painters,
       analysisResult: {
         styles: r.styles,
         painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
@@ -411,12 +445,53 @@ async function saveToGallery() {
     title.value = ''
     selectedStyle.value = ''
     editablePainters.value = []
+    toast.success('已保存到你的画廊（仅自己可见）')
     await new Promise<void>((resolve) => setTimeout(resolve, 150))
     await router.replace(`/${created.id}?analyse=true`)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '保存失败'
   } finally {
     savingToGallery.value = false
+  }
+}
+
+async function updateOwnedArtwork(draft?: {
+  title: string
+  selectedStyle: string
+  editablePainters: string[]
+}) {
+  const a = artwork.value
+  const r = result.value
+  if (!a || !r) return
+  updatingArtwork.value = true
+  try {
+    const normalizedPainters = normalizePaintersInput(
+      draft?.editablePainters ?? editablePainters.value,
+    )
+    const resolvedStyle = (
+      draft?.selectedStyle ||
+      selectedStyle.value ||
+      aiTopStyle.value ||
+      r.styles[0]?.name ||
+      ''
+    ).trim()
+    const resolvedTitle = (draft?.title || title.value || resolvedStyle || '未命名').trim()
+    const updated = await artworkStore.patchArtwork(a.id, {
+      title: resolvedTitle,
+      style: resolvedStyle,
+      aiPainters: r.painters,
+      analysisResult: {
+        styles: r.styles,
+        painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
+        rawLabels: r.rawLabels,
+      },
+    })
+    artwork.value = updated
+    toast.success('作品已更新')
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : '更新失败'
+  } finally {
+    updatingArtwork.value = false
   }
 }
 

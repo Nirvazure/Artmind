@@ -1,6 +1,11 @@
 <template>
   <div :key="`grid-${artworks.length}`" class="artwork-grid-wrap">
+    <div v-if="filteredArtworks.length === 0" class="grid-empty">
+      <p class="grid-empty-text">没有匹配的作品</p>
+      <button type="button" class="grid-empty-btn" @click="$emit('clearFilters')">清除筛选</button>
+    </div>
     <MasonryWall
+      v-else
       :items="visibleItems"
       :column-width="columnWidth"
       :gap="12"
@@ -19,7 +24,7 @@
         />
       </template>
     </MasonryWall>
-    <div ref="sentinelRef" class="masonry-sentinel" />
+    <div v-if="filteredArtworks.length > 0" ref="sentinelRef" class="masonry-sentinel" />
   </div>
 </template>
 
@@ -37,10 +42,13 @@ interface PainterItem {
 const props = defineProps<{
   artworks: Artwork[]
   filterStyle: string | null
+  filterPainter: string | null
   painters?: PainterItem[]
 }>()
 
-const artworks = computed(() => props.artworks)
+defineEmits<{
+  clearFilters: []
+}>()
 
 function getPainterNames(item: Artwork): string[] {
   if (item.analysisResult?.painters?.length) return item.analysisResult.painters
@@ -48,13 +56,30 @@ function getPainterNames(item: Artwork): string[] {
   return list
 }
 
+function matchesPainterFilter(item: Artwork, painterName: string): boolean {
+  const fromAnalysis = item.analysisResult?.painters ?? []
+  if (fromAnalysis.some((p) => p.trim().toLowerCase() === painterName.trim().toLowerCase())) {
+    return true
+  }
+  const fallback = (props.painters ?? []).find((p) => p.name === painterName)
+  if (fallback && item.style === fallback.style) return true
+  return false
+}
+
 const router = useRouter()
 const auth = useAuth()
 const artworkStore = useArtworkStore()
 
-const filteredArtworks = computed(() =>
-  props.filterStyle ? props.artworks.filter((a) => a.style === props.filterStyle) : props.artworks,
-)
+const filteredArtworks = computed(() => {
+  let list = props.artworks
+  if (props.filterStyle) {
+    list = list.filter((a) => a.style === props.filterStyle)
+  }
+  if (props.filterPainter) {
+    list = list.filter((a) => matchesPainterFilter(a, props.filterPainter!))
+  }
+  return list
+})
 
 const visibleCount = ref(BATCH_SIZE)
 const visibleItems = computed(() => filteredArtworks.value.slice(0, visibleCount.value))
@@ -88,6 +113,10 @@ function updateColumnWidth() {
 
 let io: IntersectionObserver | null = null
 
+watch(filteredArtworks, () => {
+  visibleCount.value = BATCH_SIZE
+})
+
 onMounted(() => {
   updateColumnWidth()
   if (typeof window !== 'undefined') {
@@ -108,12 +137,20 @@ onMounted(() => {
   if (sentinel) io.observe(sentinel)
 })
 
+watch(sentinelRef, (el) => {
+  if (!io) return
+  io.disconnect()
+  if (el) io.observe(el)
+})
+
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateColumnWidth)
   }
   if (io) io.disconnect()
 })
+
+defineExpose({ filteredCount: computed(() => filteredArtworks.value.length) })
 </script>
 
 <style scoped>
@@ -124,5 +161,24 @@ onUnmounted(() => {
 .masonry-sentinel {
   height: 1px;
   visibility: hidden;
+}
+
+.grid-empty {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.grid-empty-text {
+  margin: 0 0 12px;
+  color: var(--gallery-text-secondary, rgba(46, 44, 42, 0.72));
+}
+
+.grid-empty-btn {
+  background: none;
+  border: none;
+  color: var(--gallery-accent, #5c5046);
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: inherit;
 }
 </style>

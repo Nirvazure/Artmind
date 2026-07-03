@@ -7,16 +7,6 @@
         <span class="app-bar-subtitle"> AI 绘画分析引擎</span>
       </div>
       <v-spacer />
-      <GalleryFilterBar
-        v-if="route.path.startsWith('/gallery')"
-        v-model:filter-style="filterStore.selectedStyle"
-        v-model:filter-painter="filterStore.selectedPainter"
-        :styles="styles"
-        :painters="painters"
-        :style-cover-map="styleCoverMap"
-        class="app-bar-filter"
-        compact
-      />
       <v-btn v-if="route.path.startsWith('/gallery')" :to="'/'" variant="text" class="text-none">
         Home
       </v-btn>
@@ -68,41 +58,8 @@
 </template>
 
 <script setup lang="ts">
-interface PainterItem {
-  name: string
-  style: string
-  era?: string
-  bio?: string
-  verified?: boolean
-}
-
 const route = useRoute()
-const filterStore = useGalleryFilterStore()
-const artworkStore = useArtworkStore()
 const auth = useAuth()
-
-const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')
-const painters = computed(() => paintersData.value ?? [])
-
-const { data: stylesData } = await useFetch<string[]>('/api/models')
-const styles = computed(() => stylesData.value ?? [])
-
-const allItems = computed(() =>
-  artworkStore.artworks.map((a) => ({
-    id: a.id,
-    title: a.title,
-    style: a.style,
-    imageUrl: a.imageUrl,
-  })),
-)
-const { data: styleCoversData } = await useFetch<Record<string, string>>('/api/style-covers')
-const styleCoverMap = computed(() => {
-  const map: Record<string, string> = { ...(styleCoversData.value ?? {}) }
-  for (const item of allItems.value) {
-    if (item.style && item.imageUrl) map[item.style] = item.imageUrl
-  }
-  return map
-})
 
 const isArtworkDetail = computed(() => {
   if (route.path === '/' || route.path === '/gallery') return false
@@ -233,22 +190,5 @@ const appBarClass = computed(() =>
 .layout-gallery :deep(.app-bar-shell .v-toolbar-title),
 .layout-gallery :deep(.app-bar-shell .app-bar-subtitle) {
   color: rgba(16, 22, 30, 0.94) !important;
-}
-
-.app-bar-filter {
-  margin-inline-end: 12px;
-  min-width: 180px;
-  max-width: 260px;
-}
-
-.app-bar-filter :deep(.v-field) {
-  min-height: 40px;
-}
-
-@media (max-width: 599px) {
-  .app-bar-filter {
-    min-width: 140px;
-    max-width: 180px;
-  }
 }
 </style>

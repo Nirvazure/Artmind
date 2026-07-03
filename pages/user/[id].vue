@@ -83,20 +83,7 @@
                     :key-mapper="(item) => item.id"
                   >
                     <template #default="{ item }">
-                      <NuxtLink :to="`/${item.id}`" class="gallery-card-link">
-                        <div
-                          class="gallery-card-image"
-                          :style="{
-                            aspectRatio:
-                              item.imageWidth && item.imageHeight
-                                ? `${item.imageWidth / item.imageHeight}`
-                                : '4/3',
-                          }"
-                        >
-                          <v-img :src="item.imageUrl" :alt="item.title" cover />
-                        </div>
-                        <div class="gallery-card-title">{{ item.title || '未命名作品' }}</div>
-                      </NuxtLink>
+                      <UserGalleryCard :artwork="item" @updated="onGalleryArtworkUpdated" />
                     </template>
                   </MasonryWall>
                 </div>
@@ -203,6 +190,11 @@ async function onAvatarSuccess(url: string) {
     // 已通过 setPhoto 更新展示
   }
 }
+
+function onGalleryArtworkUpdated(updated: import('~/stores/artwork').Artwork) {
+  const idx = myArtworks.value.findIndex((a) => a.id === updated.id)
+  if (idx !== -1) myArtworks.value[idx] = updated
+}
 </script>
 
 <style scoped>
@@ -255,6 +247,19 @@ async function onAvatarSuccess(url: string) {
 .gallery-card-image {
   overflow: hidden;
   display: block;
+  position: relative;
+}
+
+.gallery-card-image.is-private {
+  opacity: 0.92;
+}
+
+.private-lock {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: rgba(255, 255, 255, 0.95);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
 }
 
 .gallery-card-image :deep(img) {

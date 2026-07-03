@@ -158,6 +158,63 @@ export type Database = {
         }
         Relationships: []
       }
+      style_corrections: {
+        Row: {
+          id: string
+          user_id: string | null
+          artwork_id: string | null
+          image_url: string
+          ai_top_style: string
+          ai_styles: Json
+          user_style: string
+          ai_painters: Json
+          user_painters: Json
+          raw_labels: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          artwork_id?: string | null
+          image_url: string
+          ai_top_style: string
+          ai_styles: Json
+          user_style: string
+          ai_painters: Json
+          user_painters: Json
+          raw_labels?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          artwork_id?: string | null
+          image_url?: string
+          ai_top_style?: string
+          ai_styles?: Json
+          user_style?: string
+          ai_painters?: Json
+          user_painters?: Json
+          raw_labels?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'style_corrections_artwork_id_fkey'
+            columns: ['artwork_id']
+            isOneToOne: false
+            referencedRelation: 'artworks'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'style_corrections_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       uploads: {
         Row: {
           id: string
