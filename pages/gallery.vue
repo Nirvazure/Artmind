@@ -1,21 +1,33 @@
 <template>
-  <div class="gallery-page">
-    <!-- 作品展区 -->
-    <v-sheet
-      v-motion
-      class="gallery-section m3-section"
-      variant="flat"
-      :initial="{ opacity: 0, y: 14 }"
-      :enter="{ opacity: 1, y: 0, transition: { delay: 110, duration: 320, easing: 'ease-out' } }"
-    >
-      <div :key="`gallery-${artworkStore.artworks.length}`" class="section-body">
-        <GalleryArtworkGrid
-          :artworks="artworkStore.artworks"
-          :filter-style="effectiveFilterStyle"
-          :painters="painters"
-        />
-      </div>
-    </v-sheet>
+  <div class="gallery-page gallery-theme-light">
+    <div v-if="loading" class="gallery-loading">
+      <v-progress-circular indeterminate color="primary" size="40" />
+    </div>
+    <template v-else>
+      <GalleryFilterPanel
+        :artworks="artworkStore.artworks"
+        :styles="styles"
+        :painters="painters"
+        :style-cover-map="styleCoverMap"
+        :filter-style="filterStore.selectedStyle"
+        :filter-painter="filterStore.selectedPainter"
+        :filtered-count="filteredCount"
+        @update:filter-style="filterStore.selectedStyle = $event"
+        @update:filter-painter="filterStore.selectedPainter = $event"
+      />
+
+      <v-sheet class="gallery-section m3-section" variant="flat">
+        <div class="section-body">
+          <GalleryArtworkGrid
+            :artworks="artworkStore.artworks"
+            :filter-style="filterStore.selectedStyle"
+            :filter-painter="filterStore.selectedPainter"
+            :painters="painters"
+            @clear-filters="clearFilters"
+          />
+        </div>
+      </v-sheet>
+    </template>
   </div>
 </template>
 
@@ -33,36 +45,78 @@ interface PainterItem {
 const artworkStore = useArtworkStore()
 const filterStore = useGalleryFilterStore()
 
-const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')
-const painters = computed(() => paintersData.value ?? [])
+interface GalleryMeta {
+  painters: PainterItem[]
+  styles: string[]
+  styleCovers: Record<string, string>
+}
 
-const effectiveFilterStyle = computed(() => {
-  if (filterStore.selectedPainter) {
-    const p = painters.value.find((x) => x.name === filterStore.selectedPainter)
-    return p?.style ?? null
+const { data: galleryMeta, pending: metaPending } = await useAsyncData<GalleryMeta>(
+  'gallery-meta',
+  () =>
+    Promise.all([
+      $fetch<PainterItem[]>('/api/painters'),
+      $fetch<string[]>('/api/models'),
+      $fetch<Record<string, string>>('/api/style-covers'),
+    ]).then(([painters, styles, styleCovers]) => ({ painters, styles, styleCovers })),
+)
+
+const { pending: artworksPending } = await useAsyncData('gallery-artworks', async () => {
+  if (artworkStore.artworks.length === 0) {
+    await artworkStore.fetchArtworks()
   }
-  return filterStore.selectedStyle
+  return artworkStore.artworks.length
 })
 
-onMounted(() => {
-  artworkStore.fetchArtworks()
+const loading = computed(() => metaPending.value || artworksPending.value)
+
+const painters = computed(() => galleryMeta.value?.painters ?? [])
+const styles = computed(() => galleryMeta.value?.styles ?? [])
+
+const styleCoverMap = computed(() => {
+  const map: Record<string, string> = { ...(galleryMeta.value?.styleCovers ?? {}) }
+  for (const item of artworkStore.artworks) {
+    if (item.style && item.imageUrl) map[item.style] = item.imageUrl
+  }
+  return map
 })
+
+const filteredCount = computed(() => {
+  let list = artworkStore.artworks
+  if (filterStore.selectedStyle) {
+    list = list.filter((a) => a.style === filterStore.selectedStyle)
+  }
+  if (filterStore.selectedPainter) {
+    const name = filterStore.selectedPainter
+    list = list.filter((a) => {
+      const fromAnalysis = a.analysisResult?.painters ?? []
+      if (fromAnalysis.some((p) => p.trim().toLowerCase() === name.trim().toLowerCase())) {
+        return true
+      }
+      const fallback = painters.value.find((p) => p.name === name)
+      return fallback ? a.style === fallback.style : false
+    })
+  }
+  return list.length
+})
+
+function clearFilters() {
+  filterStore.selectedStyle = null
+  filterStore.selectedPainter = null
+}
 </script>
 
 <style scoped>
 .gallery-page {
   min-height: 100%;
-  padding: clamp(20px, 2.8vw, 40px);
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+  padding: clamp(12px, 2vw, 32px) clamp(20px, 2.8vw, 40px) clamp(20px, 2.8vw, 40px);
   max-width: 1920px;
   margin: 0 auto;
 }
 
 @media (max-width: 599px) {
   .gallery-page {
-    padding: 12px 16px;
+    padding: 8px 12px 16px;
   }
 }
 
@@ -76,23 +130,13 @@ onMounted(() => {
   min-height: 64px;
 }
 
-/* Theme: Dark */
-.gallery-theme-dark {
-  --gallery-bg: #0d0d0d;
-  --gallery-text: #f5f5f0;
-  --gallery-text-secondary: rgba(245, 245, 240, 0.7);
-  --gallery-accent: #c9a962;
-  --gallery-accent-foreground: #0d0d0d;
-  --gallery-border: rgba(245, 245, 240, 0.2);
-  --gallery-outline: rgba(245, 245, 240, 0.2);
-  --gallery-on-surface: #f5f5f0;
-  --gallery-on-surface-muted: rgba(245, 245, 240, 0.7);
-  --gallery-surface: rgba(255, 255, 255, 0.05);
-  background-color: var(--gallery-bg);
-  color: var(--gallery-text);
+.gallery-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
 }
 
-/* Theme: Light - 暖白浅色，与暖灰统一强调色系 */
 .gallery-theme-light {
   --gallery-bg: #faf9f7;
   --gallery-text: #2e2c2a;
@@ -104,22 +148,6 @@ onMounted(() => {
   --gallery-on-surface: #2e2c2a;
   --gallery-on-surface-muted: rgba(46, 44, 42, 0.72);
   --gallery-surface: rgba(92, 80, 70, 0.06);
-  background-color: var(--gallery-bg);
-  color: var(--gallery-text);
-}
-
-/* Theme: Warm - 暖灰，与浅色共用焦糖褐强调 */
-.gallery-theme-warm {
-  --gallery-bg: #ebe8e4;
-  --gallery-text: #3d3935;
-  --gallery-text-secondary: rgba(61, 57, 53, 0.75);
-  --gallery-accent: #6b5b4f;
-  --gallery-accent-foreground: #f5f3f0;
-  --gallery-border: rgba(61, 57, 53, 0.15);
-  --gallery-outline: rgba(61, 57, 53, 0.15);
-  --gallery-on-surface: #3d3935;
-  --gallery-on-surface-muted: rgba(61, 57, 53, 0.75);
-  --gallery-surface: rgba(107, 91, 79, 0.08);
   background-color: var(--gallery-bg);
   color: var(--gallery-text);
 }

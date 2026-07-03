@@ -1,38 +1,4 @@
-/** keremberke/yolov8m-painting-classification 27 流派 -> 中文 */
-export const KEREMBERKE_TO_STYLE: Record<string, string> = {
-  Abstract_Expressionism: '抽象表现主义',
-  Action_painting: '行动绘画',
-  Analytical_Cubism: '分析立体主义',
-  Art_Nouveau_Modern: '新艺术运动',
-  Baroque: '巴洛克',
-  Color_Field_Painting: '色域绘画',
-  Contemporary_Realism: '当代现实主义',
-  Cubism: '立体主义',
-  Early_Renaissance: '早期文艺复兴',
-  Expressionism: '表现主义',
-  Fauvism: '野兽派',
-  High_Renaissance: '盛期文艺复兴',
-  Impressionism: '印象派',
-  Mannerism_Late_Renaissance: '样式主义',
-  Minimalism: '极简主义',
-  Naive_Art_Primitivism: '素人艺术',
-  New_Realism: '新现实主义',
-  Northern_Renaissance: '北方文艺复兴',
-  Pointillism: '点彩派',
-  Pop_Art: '波普艺术',
-  Post_Impressionism: '后印象派',
-  Realism: '现实主义',
-  Rococo: '洛可可',
-  Romanticism: '浪漫主义',
-  Symbolism: '象征主义',
-  Synthetic_Cubism: '综合立体主义',
-  Ukiyo_e: '浮世绘',
-}
-
-/** AI 可识别的 27 种艺术流派（中文名，去重后顺序固定） */
-export const STYLE_NAMES = [
-  ...new Set(Object.values(KEREMBERKE_TO_STYLE)),
-].sort() as readonly string[]
+export { KEREMBERKE_TO_STYLE, STYLE_NAMES } from '../../utils/style-labels'
 
 /** 流派默认封面（Wikimedia 公共领域画作） */
 export const STYLE_COVER_URLS: Partial<Record<string, string>> = {

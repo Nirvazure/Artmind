@@ -1,8 +1,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '~/types/database.types'
 
-let adminClient: SupabaseClient | null = null
+type AdminClient = SupabaseClient<Database, 'artmind'>
 
-export function getSupabaseAdmin(): SupabaseClient {
+let adminClient: AdminClient | null = null
+
+export function getSupabaseAdmin(): AdminClient {
   if (adminClient) return adminClient
   const config = useRuntimeConfig()
   const url =
@@ -14,7 +17,7 @@ export function getSupabaseAdmin(): SupabaseClient {
   if (!url || !key) {
     throw new Error('Supabase admin not configured (SUPABASE_SERVICE_ROLE_KEY required)')
   }
-  adminClient = createClient(url, key, {
+  adminClient = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
     db: { schema: 'artmind' },
   })

@@ -17,7 +17,11 @@ export async function callPaintingInference(
 
   try {
     const formData = new FormData()
-    formData.append('image', new Blob([imageBuffer], { type: 'image/jpeg' }), 'image.jpg')
+    formData.append(
+      'image',
+      new Blob([new Uint8Array(imageBuffer)], { type: 'image/jpeg' }),
+      'image.jpg',
+    )
     const res = await $fetch<Array<{ label: string; score: number }>>(url, {
       method: 'POST',
       body: formData,

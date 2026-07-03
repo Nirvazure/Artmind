@@ -44,30 +44,7 @@
             </v-overlay>
           </button>
           <div class="profile-info">
-            <div v-if="editingName" class="d-flex flex-wrap align-center gap-2 mt-1">
-              <v-text-field
-                v-model="localName"
-                density="compact"
-                variant="outlined"
-                hide-details
-                class="profile-name-input"
-                @keydown.enter="saveName"
-                @keydown.escape="cancelEditName"
-              />
-              <v-btn size="small" color="primary" :loading="savingName" @click="saveName"
-                >保存</v-btn
-              >
-              <v-btn size="small" variant="text" :disabled="savingName" @click="cancelEditName"
-                >取消</v-btn
-              >
-              <p v-if="nameError" class="text-caption text-error">{{ nameError }}</p>
-            </div>
-            <div v-else class="d-flex align-center gap-1 flex-wrap">
-              <h1 class="profile-name">{{ user?.name ?? '用户' }}</h1>
-              <v-btn icon variant="text" size="x-small" @click="editingName = true">
-                <v-icon size="16">mdi-pencil</v-icon>
-              </v-btn>
-            </div>
+            <h1 class="profile-name">{{ user?.name ?? '用户' }}</h1>
             <div class="profile-id">ID: {{ user?.id || '—' }}</div>
           </div>
         </div>
@@ -124,30 +101,7 @@
             <v-progress-circular indeterminate size="40" />
           </v-overlay>
         </button>
-        <div v-if="editingName" class="sidebar-name-edit">
-          <v-text-field
-            v-model="localName"
-            density="compact"
-            variant="outlined"
-            hide-details
-            class="mb-2"
-            @keydown.enter="saveName"
-            @keydown.escape="cancelEditName"
-          />
-          <div class="d-flex gap-1">
-            <v-btn size="small" color="primary" :loading="savingName" @click="saveName">保存</v-btn>
-            <v-btn size="small" variant="text" :disabled="savingName" @click="cancelEditName"
-              >取消</v-btn
-            >
-          </div>
-          <p v-if="nameError" class="text-caption text-error mt-1">{{ nameError }}</p>
-        </div>
-        <div v-else class="d-flex align-center justify-center gap-1">
-          <h1 class="sidebar-name">{{ user?.name ?? '用户' }}</h1>
-          <v-btn icon variant="text" size="x-small" @click="editingName = true">
-            <v-icon size="16">mdi-pencil</v-icon>
-          </v-btn>
-        </div>
+        <h1 class="sidebar-name">{{ user?.name ?? '用户' }}</h1>
         <div class="sidebar-id">ID: {{ user?.id || '—' }}</div>
         <div class="sidebar-stats">
           <div class="stat-block">
@@ -169,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   user: { id: string; name: string; photo?: string } | null
   stats: { analyzed: number; gallery: number; collected?: number }
   variant: 'stacked' | 'sidebar'
@@ -177,49 +131,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'avatar-success': [url: string]
-  'update-name': [name: string]
 }>()
 
 const auth = useAuth()
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const uploadingAvatar = ref(false)
-const editingName = ref(false)
-const localName = ref('')
-const savingName = ref(false)
-const nameError = ref('')
-
-watch(
-  () => props.user?.name,
-  (v) => {
-    localName.value = v ?? ''
-  },
-  { immediate: true },
-)
-
-async function saveName() {
-  const name = localName.value.trim()
-  if (!name || name === props.user?.name) {
-    editingName.value = false
-    return
-  }
-  nameError.value = ''
-  savingName.value = true
-  auth.setName(name)
-  editingName.value = false
-  try {
-    await auth.updateProfile({ nickname: name })
-  } catch {
-    // 已通过 setName 更新展示
-  } finally {
-    savingName.value = false
-  }
-}
-
-function cancelEditName() {
-  localName.value = props.user?.name ?? ''
-  editingName.value = false
-  nameError.value = ''
-}
 
 function resizeImageToSquare(file: File, maxSize = 512): Promise<Blob> {
   return new Promise((resolve, reject) => {

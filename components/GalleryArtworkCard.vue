@@ -40,10 +40,11 @@
             <v-avatar
               v-for="name in painterNames.slice(0, 3)"
               :key="name"
-              :image="avatarUrl(name)"
               size="24"
-              class="painter-avatar"
-            />
+              class="painter-avatar painter-avatar-initial"
+            >
+              <span>{{ painterInitial(name) }}</span>
+            </v-avatar>
           </template>
           <v-icon v-else icon="mdi-account-question" size="24" class="painter-icon" />
         </div>
@@ -55,6 +56,7 @@
 <script setup lang="ts">
 import type { Artwork } from '~/stores/artwork'
 import VanillaTilt from 'vanilla-tilt'
+import { painterInitial } from '~/utils/painter-avatar'
 
 withDefaults(
   defineProps<{
@@ -71,10 +73,6 @@ defineEmits<{
   click: []
   'toggle-collect': []
 }>()
-
-function avatarUrl(name: string) {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2f3a4a&color=fff&size=48`
-}
 
 const cardRef = ref<HTMLElement | null>(null)
 
@@ -191,6 +189,14 @@ onUnmounted(() => {
 .painter-avatar {
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.painter-avatar-initial {
+  background: linear-gradient(145deg, rgba(58, 69, 86, 0.95), rgba(36, 44, 58, 0.98));
+  color: #f4f7fb;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .painter-icon {

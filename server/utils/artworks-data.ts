@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './supabase-admin'
+import type { Json } from '~/types/database.types'
 
 export interface ArtworkAnalysisResult {
   styles: { name: string; confidence: number }[]
@@ -87,9 +88,9 @@ export async function insertArtwork(artwork: Artwork): Promise<Artwork> {
       image_url: artwork.imageUrl,
       image_width: artwork.imageWidth ?? null,
       image_height: artwork.imageHeight ?? null,
-      is_public: artwork.isPublic ?? true,
+      is_public: artwork.isPublic ?? false,
       status: 'published',
-      analysis_result: artwork.analysisResult ?? null,
+      analysis_result: (artwork.analysisResult ?? null) as unknown as Json,
     })
     .select()
     .single()
@@ -99,15 +100,31 @@ export async function insertArtwork(artwork: Artwork): Promise<Artwork> {
 
 export async function updateArtwork(
   id: string,
-  update: { likes?: string[]; analysisResult?: ArtworkAnalysisResult },
+  update: {
+    title?: string
+    style?: string
+    isPublic?: boolean
+    likes?: string[]
+    analysisResult?: ArtworkAnalysisResult
+  },
 ): Promise<Artwork | null> {
   const supabase = getSupabaseAdmin()
+  const rowUpdate: {
+    title?: string
+    style?: string
+    is_public?: boolean
+    analysis_result?: Json
+  } = {}
 
+  if (update.title !== undefined) rowUpdate.title = update.title
+  if (update.style !== undefined) rowUpdate.style = update.style
+  if (update.isPublic !== undefined) rowUpdate.is_public = update.isPublic
   if (update.analysisResult !== undefined) {
-    const { error } = await supabase
-      .from('artworks')
-      .update({ analysis_result: update.analysisResult })
-      .eq('id', id)
+    rowUpdate.analysis_result = update.analysisResult as unknown as Json
+  }
+
+  if (Object.keys(rowUpdate).length > 0) {
+    const { error } = await supabase.from('artworks').update(rowUpdate).eq('id', id)
     if (error) throw error
   }
 

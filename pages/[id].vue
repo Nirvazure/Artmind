@@ -34,37 +34,11 @@
                 <div v-else class="frame-skeleton" />
               </div>
             </div>
-            <div class="glass-tools">
-              <div class="controls-row">
-                <div class="controls-actions-group">
-                  <v-btn
-                    variant="outlined"
-                    rounded="pill"
-                    class="upload-btn"
-                    prepend-icon="mdi-cloud-upload"
-                    size="small"
-                    :disabled="loading"
-                    @click="triggerUpload"
-                  >
-                    上传
-                  </v-btn>
-                  <v-spacer />
-                  <v-btn
-                    color="primary"
-                    variant="flat"
-                    rounded="lg"
-                    :loading="loading"
-                    :disabled="loading || !canAnalyze"
-                    prepend-icon="mdi-magnify"
-                    size="default"
-                    class="analyze-btn analyze-btn--d"
-                    @click="analyze"
-                  >
-                    {{ loading ? '分析中' : '分析' }}
-                  </v-btn>
-                </div>
-              </div>
-            </div>
+            <AnalysisUploadCommand
+              v-bind="uploadBindings"
+              @upload="triggerUpload"
+              @analyze="analyze"
+            />
             <v-alert v-if="error" type="error" closable density="compact" class="mt-2">
               {{ error }}
             </v-alert>
@@ -86,7 +60,11 @@
               :model-styles-loading="modelStylesLoading"
               :saving-to-gallery="savingToGallery"
               :can-save-to-gallery="canSaveToGallery"
+              :current-artwork-id="id"
+              :is-existing-owned="isExistingOwned"
+              :updating="updatingArtwork"
               @save-to-gallery="saveToGallery"
+              @update-artwork="updateOwnedArtwork"
             />
           </section>
         </div>
@@ -119,6 +97,8 @@ const id = computed(() => route.params.id as string)
 const analyzeMode = computed(() => route.query.analyse === 'true')
 
 const artworkStore = useArtworkStore()
+const auth = useAuth()
+const toast = useToast()
 const { classifyByUrl, classifyByFile } = useClassifier()
 
 const artwork = ref<import('~/stores/artwork').Artwork | null>(null)
@@ -142,6 +122,7 @@ const modelStylesLoaded = ref(false)
 const modelStylesLoading = ref(false)
 const inFlightAnalyzeKey = ref<string | null>(null)
 const savingToGallery = ref(false)
+const updatingArtwork = ref(false)
 const outputMode = ref<'polished' | 'raw'>('polished')
 
 const result = computed(() => {
@@ -187,7 +168,36 @@ const frameAspectRatio = computed(() => {
 
 const canSwitch = computed(() => artworkStore.artworks.length > 1)
 const canAnalyze = computed(() => !!pendingFile.value || !!artwork.value?.imageUrl)
-const canSaveToGallery = computed(() => !!result.value && !loading.value && !savingToGallery.value)
+
+const uploadPhase = computed<'idle' | 'ready' | 'analyzing' | 'resolved'>(() => {
+  if (loading.value) return 'analyzing'
+  if (result.value) return 'resolved'
+  if (canAnalyze.value) return 'ready'
+  return 'idle'
+})
+
+const uploadFileName = computed(() => {
+  if (pendingFile.value?.name) return pendingFile.value.name
+  const titleText = artwork.value?.title?.trim()
+  if (titleText) return titleText
+  return ''
+})
+
+const uploadBindings = computed(() => ({
+  phase: uploadPhase.value,
+  canAnalyze: canAnalyze.value,
+  loading: loading.value,
+  fileName: uploadFileName.value,
+  previewUrl: displayImageSrc.value || undefined,
+}))
+const canSaveToGallery = computed(
+  () => !!result.value && !loading.value && !savingToGallery.value && !isExistingOwned.value,
+)
+const isExistingOwned = computed(() => {
+  const a = artwork.value
+  const uid = auth.user.value?.id
+  return !!(a && uid && a.userId === uid && analyzeMode.value && !manualResult.value)
+})
 const aiTopStyle = computed(() => result.value?.styles[0]?.name?.trim() ?? '')
 const styleSelectItems = computed(() => {
   const items: Array<{ title: string; value: string }> = []
@@ -228,7 +238,9 @@ function syncEditableFromResult() {
   const a = artwork.value
   title.value = (a?.title || r.styles[0]?.name || '').trim()
   selectedStyle.value = (a?.style || r.styles[0]?.name || '').trim()
-  editablePainters.value = normalizePaintersInput(r.painters).slice(0, 3)
+  editablePainters.value = normalizePaintersInput(
+    a?.analysisResult?.painters?.length ? a.analysisResult.painters : r.painters,
+  ).slice(0, 3)
 }
 
 async function loadModelStyles() {
@@ -309,12 +321,22 @@ async function loadArtwork() {
       inFlightAnalyzeKey.value = autoKey
       try {
         const res = await classifyByUrl(a.imageUrl)
-        const updated = await artworkStore.updateArtworkAnalysis(a.id, {
-          styles: res.styles,
-          painters: res.painters,
-          rawLabels: res.rawLabels,
-        })
-        artwork.value = updated
+        const uid = auth.user.value?.id
+        if (uid && a.userId === uid) {
+          const updated = await artworkStore.updateArtworkAnalysis(a.id, {
+            styles: res.styles,
+            painters: res.painters,
+            rawLabels: res.rawLabels,
+          })
+          artwork.value = updated
+        } else {
+          manualResult.value = {
+            styles: res.styles,
+            painters: res.painters,
+            imageUrl: a.imageUrl,
+            rawLabels: res.rawLabels,
+          }
+        }
         syncEditableFromResult()
         await loadModelStyles()
       } finally {
@@ -345,12 +367,16 @@ function onFileSelected(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  applyDroppedFile(file)
+  input.value = ''
+}
+
+function applyDroppedFile(file: File) {
   if (uploadedImageUrl.value) URL.revokeObjectURL(uploadedImageUrl.value)
   uploadedImageUrl.value = URL.createObjectURL(file)
   pendingFile.value = file
   manualResult.value = null
   error.value = ''
-  input.value = ''
 }
 
 async function analyze() {
@@ -383,24 +409,32 @@ async function analyze() {
   }
 }
 
-async function saveToGallery() {
+async function saveToGallery(draft?: {
+  title: string
+  selectedStyle: string
+  editablePainters: string[]
+}) {
   const r = result.value
   if (!r) return
   savingToGallery.value = true
   try {
-    const normalizedPainters = normalizePaintersInput(editablePainters.value)
+    const normalizedPainters = normalizePaintersInput(
+      draft?.editablePainters ?? editablePainters.value,
+    )
     const resolvedStyle = (
+      draft?.selectedStyle ||
       selectedStyle.value ||
       aiTopStyle.value ||
       r.styles[0]?.name ||
       ''
     ).trim()
-    const resolvedTitle = (title.value || resolvedStyle || '未命名').trim()
+    const resolvedTitle = (draft?.title || title.value || resolvedStyle || '未命名').trim()
     const created = await artworkStore.addArtwork({
       title: resolvedTitle,
       style: resolvedStyle,
       imageUrl: r.imageUrl,
-      isPublic: true,
+      isPublic: false,
+      aiPainters: r.painters,
       analysisResult: {
         styles: r.styles,
         painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
@@ -411,12 +445,53 @@ async function saveToGallery() {
     title.value = ''
     selectedStyle.value = ''
     editablePainters.value = []
+    toast.success('已保存到你的画廊（仅自己可见）')
     await new Promise<void>((resolve) => setTimeout(resolve, 150))
     await router.replace(`/${created.id}?analyse=true`)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '保存失败'
   } finally {
     savingToGallery.value = false
+  }
+}
+
+async function updateOwnedArtwork(draft?: {
+  title: string
+  selectedStyle: string
+  editablePainters: string[]
+}) {
+  const a = artwork.value
+  const r = result.value
+  if (!a || !r) return
+  updatingArtwork.value = true
+  try {
+    const normalizedPainters = normalizePaintersInput(
+      draft?.editablePainters ?? editablePainters.value,
+    )
+    const resolvedStyle = (
+      draft?.selectedStyle ||
+      selectedStyle.value ||
+      aiTopStyle.value ||
+      r.styles[0]?.name ||
+      ''
+    ).trim()
+    const resolvedTitle = (draft?.title || title.value || resolvedStyle || '未命名').trim()
+    const updated = await artworkStore.patchArtwork(a.id, {
+      title: resolvedTitle,
+      style: resolvedStyle,
+      aiPainters: r.painters,
+      analysisResult: {
+        styles: r.styles,
+        painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
+        rawLabels: r.rawLabels,
+      },
+    })
+    artwork.value = updated
+    toast.success('作品已更新')
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : '更新失败'
+  } finally {
+    updatingArtwork.value = false
   }
 }
 
@@ -596,36 +671,6 @@ onUnmounted(() => {
   z-index: 100;
   min-width: 44px;
   min-height: 44px;
-}
-.controls-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-.controls-actions-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-.upload-btn {
-  color: var(--ui-text) !important;
-  border-color: var(--ui-panel-border) !important;
-}
-.glass-tools {
-  width: 100%;
-  background: rgba(8, 12, 18, 0.42);
-  border: 1px solid var(--ui-panel-border);
-  border-radius: 14px;
-  padding: 12px;
-  backdrop-filter: blur(18px);
-}
-.analyze-btn--d:hover:not(.v-btn--disabled) {
-  transform: scale(1.03);
-}
-.analyze-btn--d:active:not(.v-btn--disabled) {
-  transform: scale(0.98);
 }
 @media (max-width: 599px) {
   .page-main {
