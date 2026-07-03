@@ -12,20 +12,22 @@
         }"
       >
         <v-img :src="artwork.imageUrl" :alt="artwork.title" cover />
-        <v-icon
-          v-if="!artwork.isPublic"
-          icon="mdi-lock"
-          size="18"
-          class="status-icon status-icon--private"
-        />
-        <v-icon v-else icon="mdi-earth" size="16" class="status-icon status-icon--public" />
+        <template v-if="showVisibilityBadge">
+          <v-icon
+            v-if="!artwork.isPublic"
+            icon="mdi-lock"
+            size="18"
+            class="status-icon status-icon--private"
+          />
+          <v-icon v-else icon="mdi-earth" size="16" class="status-icon status-icon--public" />
+        </template>
       </div>
     </NuxtLink>
     <div class="gallery-card-footer">
       <NuxtLink :to="`/${artwork.id}`" class="gallery-card-title">
         {{ artwork.title || '未命名作品' }}
       </NuxtLink>
-      <div class="gallery-card-switch" @click.stop>
+      <div v-if="showPublicSwitch" class="gallery-card-switch" @click.stop>
         <v-switch
           :model-value="artwork.isPublic"
           :loading="toggling"
@@ -44,9 +46,17 @@
 <script setup lang="ts">
 import type { Artwork } from '~/stores/artwork'
 
-const props = defineProps<{
-  artwork: Artwork
-}>()
+const props = withDefaults(
+  defineProps<{
+    artwork: Artwork
+    showPublicSwitch?: boolean
+    showVisibilityBadge?: boolean
+  }>(),
+  {
+    showPublicSwitch: true,
+    showVisibilityBadge: true,
+  },
+)
 
 const emit = defineEmits<{
   updated: [artwork: Artwork]

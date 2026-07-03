@@ -255,17 +255,6 @@ const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
   opacity: 0;
 }
 
-@keyframes hero-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes bar-grow {
   from {
     transform: scaleX(0);

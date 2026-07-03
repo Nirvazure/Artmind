@@ -150,34 +150,15 @@ function onConfirm() {
 
 <style scoped>
 .save-dialog.glass-panel {
-  position: relative;
   --ui-text: #f4f7fb;
   --ui-muted: rgba(244, 247, 251, 0.78);
   --ui-panel-bg: rgba(10, 14, 20, 0.44);
   --ui-panel-border: rgba(255, 255, 255, 0.28);
-  background: var(--ui-panel-bg);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border: 1px solid var(--ui-panel-border);
-  border-radius: 20px;
-  color: var(--ui-text);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 20px 34px -24px rgba(0, 0, 0, 0.68);
   overflow: hidden;
 }
 
 .save-dialog.glass-panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 16px;
-  right: 16px;
-  height: 1px;
-  background: rgba(201, 169, 98, 0.35);
-  border-radius: 1px;
   z-index: 1;
-  pointer-events: none;
 }
 
 .save-dialog-title {

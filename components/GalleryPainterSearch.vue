@@ -21,7 +21,9 @@
       <template #item="{ item, props: itemProps }">
         <v-list-item v-bind="itemProps" class="search-item">
           <template #prepend>
-            <v-avatar :image="avatarUrl(String(item.value))" size="32" class="mr-2" />
+            <v-avatar size="32" class="mr-2 painter-avatar-initial">
+              <span>{{ painterInitial(String(item.value)) }}</span>
+            </v-avatar>
           </template>
         </v-list-item>
       </template>
@@ -30,6 +32,8 @@
 </template>
 
 <script setup lang="ts">
+import { painterInitial } from '~/utils/painter-avatar'
+
 interface PainterItem {
   name: string
   style: string
@@ -63,10 +67,6 @@ watch(
   { immediate: true },
 )
 
-function avatarUrl(name: string) {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2f3a4a&color=fff&size=64`
-}
-
 function onSelect(val: string | null) {
   emit('update:selectedPainter', val)
   if (val) query.value = null
@@ -96,5 +96,14 @@ function onSelect(val: string | null) {
 
 .search-item {
   min-height: 52px;
+}
+
+.painter-avatar-initial {
+  background: linear-gradient(145deg, rgba(58, 69, 86, 0.95), rgba(36, 44, 58, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f4f7fb;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
 }
 </style>

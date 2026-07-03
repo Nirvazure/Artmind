@@ -101,20 +101,11 @@
                     :key-mapper="(item) => item.id"
                   >
                     <template #default="{ item }">
-                      <NuxtLink :to="`/${item.id}`" class="gallery-card-link">
-                        <div
-                          class="gallery-card-image"
-                          :style="{
-                            aspectRatio:
-                              item.imageWidth && item.imageHeight
-                                ? `${item.imageWidth / item.imageHeight}`
-                                : '4/3',
-                          }"
-                        >
-                          <v-img :src="item.imageUrl" :alt="item.title" cover />
-                        </div>
-                        <div class="gallery-card-title">{{ item.title || '未命名作品' }}</div>
-                      </NuxtLink>
+                      <UserGalleryCard
+                        :artwork="item"
+                        :show-public-switch="false"
+                        :show-visibility-badge="false"
+                      />
                     </template>
                   </MasonryWall>
                 </div>
@@ -224,56 +215,5 @@ function onGalleryArtworkUpdated(updated: import('~/stores/artwork').Artwork) {
 
 .gallery-masonry {
   min-height: 80px;
-}
-
-.gallery-card-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  border-radius: 12px;
-  overflow: hidden;
-  background: color-mix(in srgb, rgb(var(--v-theme-surface)) 90%, transparent);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.gallery-card-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.gallery-card-image {
-  overflow: hidden;
-  display: block;
-  position: relative;
-}
-
-.gallery-card-image.is-private {
-  opacity: 0.92;
-}
-
-.private-lock {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  color: rgba(255, 255, 255, 0.95);
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
-}
-
-.gallery-card-image :deep(img) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.gallery-card-title {
-  padding: 12px 14px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>

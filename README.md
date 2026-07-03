@@ -6,13 +6,13 @@
 
 ## 功能概览
 
-| 模块                     | 说明                                                                                    |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| **首页** `/`             | 随机跳转至某件公开作品，沉浸式浏览（画作居中 + 背景模糊）                               |
-| **作品页** `/:id`        | 浏览态展示作品；`?analyse=true` 进入分析态：上传 → AI 分类 → 修正流派/画家 → 保存到画廊 |
-| **画廊** `/gallery`      | 瀑布流展示公开作品，App Bar 支持流派/画家筛选，登录后可收藏                             |
-| **个人主页** `/user/:id` | 分析记录、我的画廊、我的收藏；可编辑头像与昵称                                          |
-| **认证**                 | Supabase Auth + GitHub OAuth；保存作品、收藏、头像上传需登录                            |
+| 模块                     | 说明                                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| **首页** `/`             | 随机跳转至某件公开作品，沉浸式浏览（画作居中 + 背景模糊）                                 |
+| **作品页** `/:id`        | 浏览态展示作品；`?analyse=true` 进入分析态：上传 → AI 分类 → 修正流派/画家 → 默认私密保存 |
+| **画廊** `/gallery`      | 瀑布流展示公开作品，App Bar 支持流派/画家筛选，登录后可收藏                               |
+| **个人主页** `/user/:id` | 分析记录、我的画廊（公开 switch）、我的收藏；可编辑头像与昵称                             |
+| **认证**                 | Supabase Auth + GitHub OAuth；保存作品、收藏、头像上传需登录                              |
 
 ### 路线图
 
@@ -24,16 +24,16 @@
 
 ## 技术栈
 
-| 层级       | 技术                                                                                          |
-| ---------- | --------------------------------------------------------------------------------------------- |
-| 前端       | Vue 3、Nuxt 3、Vuetify 3、Pinia、@vueuse/motion                                               |
-| UI         | @yeger/vue-masonry-wall（瀑布流）、vue-chartjs / Chart.js（环形图）、vanilla-tilt（卡片动效） |
-| 后端       | Nitro（AI 分类、图片压缩、OSS 写入）                                                          |
-| 认证与数据 | YQYHub Supabase Auth + `artmind` schema Postgres（RLS）                                       |
-| 图片存储   | 阿里云 OSS（temp / artworks / avatars）                                                       |
-| 图片处理   | sharp（上传压缩、尺寸读取）                                                                   |
-| AI         | Hugging Face Space（keremberke 艺术流派分类，27 类）                                          |
-| 部署       | Vercel（`maxDuration: 180s`）                                                                 |
+| 层级       | 技术                                                        |
+| ---------- | ----------------------------------------------------------- |
+| 前端       | Vue 3、Nuxt 3、Vuetify 3、Pinia、@vueuse/motion             |
+| UI         | @yeger/vue-masonry-wall（瀑布流）、vanilla-tilt（卡片动效） |
+| 后端       | Nitro（AI 分类、图片压缩、OSS 写入）                        |
+| 认证与数据 | YQYHub Supabase Auth + `artmind` schema Postgres（RLS）     |
+| 图片存储   | 阿里云 OSS（temp / artworks / avatars）                     |
+| 图片处理   | sharp（上传压缩、尺寸读取）                                 |
+| AI         | Hugging Face Space（keremberke 艺术流派分类，27 类）        |
+| 部署       | Vercel（`maxDuration: 180s`）                               |
 
 ---
 
@@ -45,13 +45,19 @@ Artmind/
 ├── nuxt.config.ts
 ├── assets/app.css
 ├── components/
-│   ├── AnalysisResultPanel.vue    # 分析结果（加载态、流派图、画家卡片）
+│   ├── AnalysisConfirmCard.vue    # 保存入口
+│   ├── AnalysisHeroLabel.vue      # 流派标题与润色切换
+│   ├── AnalysisHeroPainters.vue   # 推荐画家
+│   ├── AnalysisResultPanel.vue    # 分析结果面板
+│   ├── AnalysisSaveDialog.vue     # 保存二次确认
 │   ├── GalleryArtworkCard.vue
 │   ├── GalleryArtworkGrid.vue     # 瀑布流
-│   ├── GalleryFilterBar.vue       # 流派/画家筛选
-│   ├── PainterCards.vue
-│   ├── StyleRingChart.vue
+│   ├── GalleryFilterPanel.vue     # 流派/画家筛选
+│   ├── GalleryPainterSearch.vue
+│   ├── GalleryStyleTileStrip.vue
+│   ├── RelatedArtworksStrip.vue
 │   ├── ToastSnackbar.vue
+│   ├── UserGalleryCard.vue        # 个人页画廊卡片
 │   └── UserProfileHeader.vue
 ├── composables/
 │   ├── useAuth.ts                 # Supabase Auth + profiles

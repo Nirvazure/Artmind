@@ -34,37 +34,11 @@
                 <div v-else class="frame-skeleton" />
               </div>
             </div>
-            <div class="glass-tools">
-              <div class="controls-row">
-                <div class="controls-actions-group">
-                  <v-btn
-                    variant="outlined"
-                    rounded="pill"
-                    class="upload-btn"
-                    prepend-icon="mdi-cloud-upload"
-                    size="small"
-                    :disabled="loading"
-                    @click="triggerUpload"
-                  >
-                    上传
-                  </v-btn>
-                  <v-spacer />
-                  <v-btn
-                    color="primary"
-                    variant="flat"
-                    rounded="lg"
-                    :loading="loading"
-                    :disabled="loading || !canAnalyze"
-                    prepend-icon="mdi-magnify"
-                    size="default"
-                    class="analyze-btn analyze-btn--d"
-                    @click="analyze"
-                  >
-                    {{ loading ? '分析中' : '分析' }}
-                  </v-btn>
-                </div>
-              </div>
-            </div>
+            <AnalysisUploadCommand
+              v-bind="uploadBindings"
+              @upload="triggerUpload"
+              @analyze="analyze"
+            />
             <v-alert v-if="error" type="error" closable density="compact" class="mt-2">
               {{ error }}
             </v-alert>
@@ -194,6 +168,28 @@ const frameAspectRatio = computed(() => {
 
 const canSwitch = computed(() => artworkStore.artworks.length > 1)
 const canAnalyze = computed(() => !!pendingFile.value || !!artwork.value?.imageUrl)
+
+const uploadPhase = computed<'idle' | 'ready' | 'analyzing' | 'resolved'>(() => {
+  if (loading.value) return 'analyzing'
+  if (result.value) return 'resolved'
+  if (canAnalyze.value) return 'ready'
+  return 'idle'
+})
+
+const uploadFileName = computed(() => {
+  if (pendingFile.value?.name) return pendingFile.value.name
+  const titleText = artwork.value?.title?.trim()
+  if (titleText) return titleText
+  return ''
+})
+
+const uploadBindings = computed(() => ({
+  phase: uploadPhase.value,
+  canAnalyze: canAnalyze.value,
+  loading: loading.value,
+  fileName: uploadFileName.value,
+  previewUrl: displayImageSrc.value || undefined,
+}))
 const canSaveToGallery = computed(
   () => !!result.value && !loading.value && !savingToGallery.value && !isExistingOwned.value,
 )
@@ -371,12 +367,16 @@ function onFileSelected(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  applyDroppedFile(file)
+  input.value = ''
+}
+
+function applyDroppedFile(file: File) {
   if (uploadedImageUrl.value) URL.revokeObjectURL(uploadedImageUrl.value)
   uploadedImageUrl.value = URL.createObjectURL(file)
   pendingFile.value = file
   manualResult.value = null
   error.value = ''
-  input.value = ''
 }
 
 async function analyze() {
@@ -671,36 +671,6 @@ onUnmounted(() => {
   z-index: 100;
   min-width: 44px;
   min-height: 44px;
-}
-.controls-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-.controls-actions-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-.upload-btn {
-  color: var(--ui-text) !important;
-  border-color: var(--ui-panel-border) !important;
-}
-.glass-tools {
-  width: 100%;
-  background: rgba(8, 12, 18, 0.42);
-  border: 1px solid var(--ui-panel-border);
-  border-radius: 14px;
-  padding: 12px;
-  backdrop-filter: blur(18px);
-}
-.analyze-btn--d:hover:not(.v-btn--disabled) {
-  transform: scale(1.03);
-}
-.analyze-btn--d:active:not(.v-btn--disabled) {
-  transform: scale(0.98);
 }
 @media (max-width: 599px) {
   .page-main {

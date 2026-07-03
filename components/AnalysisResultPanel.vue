@@ -1,5 +1,5 @@
 <template>
-  <div class="glass-panel">
+  <div class="glass-panel analysis-panel">
     <Transition name="fade-swap" mode="out-in">
       <div v-if="viewPhase === 'analyzing'" key="loading" class="glass-content analyzing-wrap">
         <div class="analyzing-ring">
@@ -138,34 +138,13 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
 </script>
 
 <style scoped>
-.glass-panel {
-  position: relative;
-  background: var(--ui-panel-bg);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border: 1px solid var(--ui-panel-border);
-  border-radius: 20px;
+.analysis-panel.glass-panel {
   padding: 24px;
   width: min(100%, 640px);
   max-height: min(80vh, 680px);
   overflow-y: auto;
-  color: var(--ui-text);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 20px 34px -24px rgba(0, 0, 0, 0.68);
   --confirm-surface: rgba(255, 255, 255, 0.08);
   --confirm-border: rgba(255, 255, 255, 0.14);
-}
-
-.glass-panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 16px;
-  right: 16px;
-  height: 1px;
-  background: rgba(201, 169, 98, 0.35);
-  border-radius: 1px;
 }
 
 .glass-content {
@@ -276,7 +255,7 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
 }
 
 @media (max-width: 599px) {
-  .glass-panel {
+  .analysis-panel.glass-panel {
     width: 100%;
     max-width: none;
     padding: 18px;

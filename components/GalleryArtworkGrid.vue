@@ -1,5 +1,5 @@
 <template>
-  <div :key="`grid-${artworks.length}`" class="artwork-grid-wrap">
+  <div class="artwork-grid-wrap">
     <div v-if="filteredArtworks.length === 0" class="grid-empty">
       <p class="grid-empty-text">没有匹配的作品</p>
       <button type="button" class="grid-empty-btn" @click="$emit('clearFilters')">清除筛选</button>

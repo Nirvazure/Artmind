@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import type { PainterCatalogItem } from '~/composables/usePainterDisplay'
 import { usePainterDisplay } from '~/composables/usePainterDisplay'
+import { painterInitial } from '~/utils/painter-avatar'
 
 const props = withDefaults(
   defineProps<{
@@ -58,12 +59,6 @@ const displayPainters = usePainterDisplay(paintersRef, styleNameRef, catalogRef)
 
 const primaryPainter = computed(() => displayPainters.value[0] ?? '')
 const otherPainters = computed(() => displayPainters.value.slice(1))
-
-function painterInitial(name: string) {
-  const trimmed = name.trim()
-  if (!trimmed) return '?'
-  return trimmed.charAt(0)
-}
 </script>
 
 <style scoped>
@@ -210,17 +205,6 @@ function painterInitial(name: string) {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-}
-
-@keyframes hero-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @media (max-width: 599px) {

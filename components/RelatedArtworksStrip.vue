@@ -54,17 +54,6 @@ const items = computed(() =>
   animation: hero-in 0.4s ease-out 0.24s both;
 }
 
-@keyframes hero-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .strip-heading {
   margin: 0 0 10px;
   font-size: 0.72rem;

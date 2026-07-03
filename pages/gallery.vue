@@ -1,34 +1,33 @@
 <template>
   <div class="gallery-page gallery-theme-light">
-    <GalleryFilterPanel
-      :artworks="artworkStore.artworks"
-      :styles="styles"
-      :painters="painters"
-      :style-cover-map="styleCoverMap"
-      :filter-style="filterStore.selectedStyle"
-      :filter-painter="filterStore.selectedPainter"
-      :filtered-count="filteredCount"
-      @update:filter-style="filterStore.selectedStyle = $event"
-      @update:filter-painter="filterStore.selectedPainter = $event"
-    />
+    <div v-if="loading" class="gallery-loading">
+      <v-progress-circular indeterminate color="primary" size="40" />
+    </div>
+    <template v-else>
+      <GalleryFilterPanel
+        :artworks="artworkStore.artworks"
+        :styles="styles"
+        :painters="painters"
+        :style-cover-map="styleCoverMap"
+        :filter-style="filterStore.selectedStyle"
+        :filter-painter="filterStore.selectedPainter"
+        :filtered-count="filteredCount"
+        @update:filter-style="filterStore.selectedStyle = $event"
+        @update:filter-painter="filterStore.selectedPainter = $event"
+      />
 
-    <v-sheet
-      v-motion
-      class="gallery-section m3-section"
-      variant="flat"
-      :initial="{ opacity: 0, y: 14 }"
-      :enter="{ opacity: 1, y: 0, transition: { delay: 110, duration: 320, easing: 'ease-out' } }"
-    >
-      <div :key="`gallery-${artworkStore.artworks.length}`" class="section-body">
-        <GalleryArtworkGrid
-          :artworks="artworkStore.artworks"
-          :filter-style="filterStore.selectedStyle"
-          :filter-painter="filterStore.selectedPainter"
-          :painters="painters"
-          @clear-filters="clearFilters"
-        />
-      </div>
-    </v-sheet>
+      <v-sheet class="gallery-section m3-section" variant="flat">
+        <div class="section-body">
+          <GalleryArtworkGrid
+            :artworks="artworkStore.artworks"
+            :filter-style="filterStore.selectedStyle"
+            :filter-painter="filterStore.selectedPainter"
+            :painters="painters"
+            @clear-filters="clearFilters"
+          />
+        </div>
+      </v-sheet>
+    </template>
   </div>
 </template>
 
@@ -46,15 +45,36 @@ interface PainterItem {
 const artworkStore = useArtworkStore()
 const filterStore = useGalleryFilterStore()
 
-const { data: paintersData } = await useFetch<PainterItem[]>('/api/painters')
-const painters = computed(() => paintersData.value ?? [])
+interface GalleryMeta {
+  painters: PainterItem[]
+  styles: string[]
+  styleCovers: Record<string, string>
+}
 
-const { data: stylesData } = await useFetch<string[]>('/api/models')
-const styles = computed(() => stylesData.value ?? [])
+const { data: galleryMeta, pending: metaPending } = await useAsyncData<GalleryMeta>(
+  'gallery-meta',
+  () =>
+    Promise.all([
+      $fetch<PainterItem[]>('/api/painters'),
+      $fetch<string[]>('/api/models'),
+      $fetch<Record<string, string>>('/api/style-covers'),
+    ]).then(([painters, styles, styleCovers]) => ({ painters, styles, styleCovers })),
+)
 
-const { data: styleCoversData } = await useFetch<Record<string, string>>('/api/style-covers')
+const { pending: artworksPending } = await useAsyncData('gallery-artworks', async () => {
+  if (artworkStore.artworks.length === 0) {
+    await artworkStore.fetchArtworks()
+  }
+  return artworkStore.artworks.length
+})
+
+const loading = computed(() => metaPending.value || artworksPending.value)
+
+const painters = computed(() => galleryMeta.value?.painters ?? [])
+const styles = computed(() => galleryMeta.value?.styles ?? [])
+
 const styleCoverMap = computed(() => {
-  const map: Record<string, string> = { ...(styleCoversData.value ?? {}) }
+  const map: Record<string, string> = { ...(galleryMeta.value?.styleCovers ?? {}) }
   for (const item of artworkStore.artworks) {
     if (item.style && item.imageUrl) map[item.style] = item.imageUrl
   }
@@ -84,10 +104,6 @@ function clearFilters() {
   filterStore.selectedStyle = null
   filterStore.selectedPainter = null
 }
-
-onMounted(() => {
-  artworkStore.fetchArtworks()
-})
 </script>
 
 <style scoped>
@@ -112,6 +128,13 @@ onMounted(() => {
 
 .section-body {
   min-height: 64px;
+}
+
+.gallery-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
 }
 
 .gallery-theme-light {
