@@ -147,7 +147,7 @@ const displayImageSrc = computed(() => {
 const viewPhase = computed<'idle' | 'analyzing' | 'resolved'>(() => {
   if (loading.value) return 'analyzing'
   if (result.value) return 'resolved'
-  if (!analyzeMode.value) return 'idle'
+  if (analyzeMode.value && !notFound.value) return 'analyzing'
   return 'idle'
 })
 
@@ -288,7 +288,8 @@ async function switchToRandom() {
 async function loadArtwork() {
   error.value = ''
   notFound.value = false
-  loading.value = false
+  if (analyzeMode.value) loading.value = true
+  else loading.value = false
   manualResult.value = null
   if (uploadedImageUrl.value) {
     URL.revokeObjectURL(uploadedImageUrl.value)
@@ -317,7 +318,6 @@ async function loadArtwork() {
     if (analyzeMode.value && !a.analysisResult) {
       const autoKey = `auto:${a.id}:${a.imageUrl}`
       if (inFlightAnalyzeKey.value === autoKey) return
-      loading.value = true
       inFlightAnalyzeKey.value = autoKey
       try {
         const res = await classifyByUrl(a.imageUrl)

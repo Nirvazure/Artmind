@@ -1,6 +1,6 @@
 <template>
   <div class="glass-panel analysis-panel">
-    <Transition name="fade-swap" mode="out-in">
+    <Transition name="fade-swap">
       <div v-if="viewPhase === 'analyzing'" key="loading" class="glass-content analyzing-wrap">
         <div class="analyzing-ring">
           <div class="analyzing-portrait-wrap">
