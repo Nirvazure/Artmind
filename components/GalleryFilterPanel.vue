@@ -165,14 +165,16 @@ function clearAll() {
   }
 
   .filter-toolbar :deep(.style-tile-strip) {
-    flex: 1;
+    flex: 0 1 690px;
     min-width: 0;
+    max-width: 690px;
   }
 
   .filter-search {
     width: 240px;
     max-width: 240px;
     flex: none;
+    margin-left: auto;
   }
 
   .filter-search :deep(.v-field) {

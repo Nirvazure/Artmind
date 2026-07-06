@@ -1,5 +1,5 @@
 <template>
-  <div class="style-tile-strip">
+  <div ref="stripRef" class="style-tile-strip" @wheel="onWheelHorizontalScroll">
     <button
       type="button"
       class="style-tile"
@@ -11,7 +11,7 @@
       </div>
     </button>
     <button
-      v-for="style in visibleStyles"
+      v-for="style in sortedStyles"
       :key="style"
       type="button"
       class="style-tile"
@@ -23,16 +23,6 @@
         <div v-else class="tile-cover tile-cover-fallback" />
         <div class="tile-gradient" />
         <span class="tile-label">{{ style }}</span>
-      </div>
-    </button>
-    <button
-      v-if="hiddenCount > 0"
-      type="button"
-      class="style-tile style-tile-more"
-      @click="showMore = !showMore"
-    >
-      <div class="tile-inner tile-all">
-        <span class="tile-label">{{ showMore ? '收起' : `+${hiddenCount}` }}</span>
       </div>
     </button>
   </div>
@@ -50,8 +40,7 @@ defineEmits<{
   'update:selectedStyle': [value: string | null]
 }>()
 
-const showMore = ref(false)
-const VISIBLE_LIMIT = 8
+const stripRef = ref<HTMLElement | null>(null)
 
 const sortedStyles = computed(() => {
   return [...props.styles].sort((a, b) => {
@@ -63,14 +52,17 @@ const sortedStyles = computed(() => {
   })
 })
 
-const visibleStyles = computed(() => {
-  if (showMore.value) return sortedStyles.value
-  return sortedStyles.value.slice(0, VISIBLE_LIMIT)
-})
+function onWheelHorizontalScroll(event: WheelEvent) {
+  const strip = stripRef.value
+  if (!strip) return
+  if (strip.scrollWidth <= strip.clientWidth) return
 
-const hiddenCount = computed(() =>
-  showMore.value ? 0 : Math.max(0, sortedStyles.value.length - VISIBLE_LIMIT),
-)
+  const scrollDelta = event.deltaY || event.deltaX
+  if (scrollDelta === 0) return
+
+  event.preventDefault()
+  strip.scrollLeft += scrollDelta
+}
 </script>
 
 <style scoped>
@@ -81,6 +73,7 @@ const hiddenCount = computed(() =>
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   padding-bottom: 4px;
+  overscroll-behavior-x: contain;
 }
 
 .style-tile-strip::-webkit-scrollbar {
@@ -161,9 +154,5 @@ const hiddenCount = computed(() =>
   color: var(--gallery-text, #2e2c2a);
   text-shadow: none;
   font-size: 0.8rem;
-}
-
-.style-tile-more .tile-inner {
-  border: 1px dashed var(--gallery-border, rgba(46, 44, 42, 0.2));
 }
 </style>
