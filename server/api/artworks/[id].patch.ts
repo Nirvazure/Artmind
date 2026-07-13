@@ -1,6 +1,7 @@
 import { getArtworkById, updateArtwork } from '../../utils/artworks-data'
 import { getUserIdFromToken } from '../../utils/auth'
 import { insertStyleCorrection } from '../../utils/style-corrections'
+import { normalizeArtworkTitle } from '../../../utils/analysis-helpers'
 
 export default defineEventHandler(async (event) => {
   const userId = await getUserIdFromToken(event)
@@ -29,9 +30,23 @@ export default defineEventHandler(async (event) => {
     analysisResult?: import('../../utils/artworks-data').ArtworkAnalysisResult
   }>(event)
 
+  if (body?.title !== undefined && typeof body.title !== 'string') {
+    throw createError({ statusCode: 400, message: 'Invalid title' })
+  }
+  if (body?.style !== undefined && typeof body.style !== 'string') {
+    throw createError({ statusCode: 400, message: 'Invalid style' })
+  }
+
+  const normalizedTitle = body?.title !== undefined ? normalizeArtworkTitle(body.title) : undefined
+  const normalizedStyle = body?.style !== undefined ? body.style.trim() : undefined
+
+  if (body?.style !== undefined && !normalizedStyle) {
+    throw createError({ statusCode: 400, message: 'Style cannot be empty' })
+  }
+
   const updated = await updateArtwork(id, {
-    ...(body.title !== undefined && { title: body.title }),
-    ...(body.style !== undefined && { style: body.style }),
+    ...(normalizedTitle !== undefined && { title: normalizedTitle }),
+    ...(normalizedStyle !== undefined && { style: normalizedStyle }),
     ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
     ...(body.analysisResult !== undefined && { analysisResult: body.analysisResult }),
   })
@@ -51,7 +66,7 @@ export default defineEventHandler(async (event) => {
         imageUrl: updated.imageUrl,
         aiTopStyle,
         aiStyles: body.analysisResult.styles,
-        userStyle: body.style ?? updated.style,
+        userStyle: normalizedStyle ?? updated.style,
         aiPainters,
         userPainters,
         rawLabels: body.analysisResult.rawLabels,

@@ -30,9 +30,10 @@
         />
         <AnalysisConfirmCard
           :can-save-to-gallery="canSaveToGallery"
-          :is-existing-owned="isExistingOwned"
+          :show-save-to-gallery="showSaveToGallery"
+          :show-update-artwork="showUpdateArtwork"
           :updating="updating"
-          @open-save-dialog="saveDialogOpen = true"
+          @open-save-dialog="openArtworkActionDialog"
         />
         <AnalysisSaveDialog
           v-model="saveDialogOpen"
@@ -40,7 +41,7 @@
           :selected-style="selectedStyle"
           :editable-painters="editablePainters"
           :style-select-items="styleSelectItems"
-          :painter-items="result.painters"
+          :painters-catalog="paintersCatalog"
           :model-styles-loading="modelStylesLoading"
           :saving="savingToGallery"
           :updating="updating"
@@ -72,6 +73,9 @@ const props = withDefaults(
     modelStylesLoading: boolean
     savingToGallery: boolean
     canSaveToGallery: boolean
+    showSaveToGallery: boolean
+    showUpdateArtwork: boolean
+    canOpenArtworkActionDialog: boolean
     currentArtworkId?: string
     isExistingOwned?: boolean
     updating?: boolean
@@ -108,14 +112,25 @@ watch(
 )
 
 function onSaveDialogConfirm(draft: SaveDraft) {
+  if (!props.canOpenArtworkActionDialog) return
+
   emit('update:title', draft.title)
   emit('update:selectedStyle', draft.selectedStyle)
   emit('update:editablePainters', draft.editablePainters)
-  if (props.isExistingOwned) {
+
+  if (props.showUpdateArtwork) {
     emit('updateArtwork', draft)
-  } else {
+    return
+  }
+
+  if (props.showSaveToGallery) {
     emit('saveToGallery', draft)
   }
+}
+
+function openArtworkActionDialog() {
+  if (!props.canOpenArtworkActionDialog) return
+  saveDialogOpen.value = true
 }
 
 interface PainterCatalogItem {

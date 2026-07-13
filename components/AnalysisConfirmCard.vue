@@ -1,7 +1,7 @@
 <template>
   <div class="confirm-card">
     <v-btn
-      v-if="!isExistingOwned"
+      v-if="showSaveToGallery"
       color="primary"
       rounded="pill"
       block
@@ -13,7 +13,7 @@
     </v-btn>
 
     <v-btn
-      v-else
+      v-if="showUpdateArtwork"
       color="primary"
       rounded="pill"
       block
@@ -30,11 +30,13 @@
 withDefaults(
   defineProps<{
     canSaveToGallery: boolean
-    isExistingOwned?: boolean
+    showSaveToGallery?: boolean
+    showUpdateArtwork?: boolean
     updating?: boolean
   }>(),
   {
-    isExistingOwned: false,
+    showSaveToGallery: false,
+    showUpdateArtwork: false,
     updating: false,
   },
 )

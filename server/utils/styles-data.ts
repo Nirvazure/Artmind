@@ -1,7 +1,11 @@
+import { STYLE_NAMES, type StyleName } from '../../utils/style-labels'
+
 export { KEREMBERKE_TO_STYLE, STYLE_NAMES } from '../../utils/style-labels'
 
+export const DEFAULT_STYLE_COVER_URL = '/icon.png'
+
 /** 流派默认封面（Wikimedia 公共领域画作） */
-export const STYLE_COVER_URLS: Partial<Record<string, string>> = {
+export const STYLE_COVER_URLS: Partial<Record<StyleName, string>> = {
   印象派:
     'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/640px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
   立体主义:
@@ -24,4 +28,10 @@ export const STYLE_COVER_URLS: Partial<Record<string, string>> = {
     'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Watteau_-_The_Embarkation_for_Cythera.jpg/640px-Watteau_-_The_Embarkation_for_Cythera.jpg',
   现实主义:
     'https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Millet_Angelus.jpg/640px-Millet_Angelus.jpg',
+}
+
+export function getStyleCoverMap(): Record<StyleName, string> {
+  return Object.fromEntries(
+    STYLE_NAMES.map((style) => [style, STYLE_COVER_URLS[style] ?? DEFAULT_STYLE_COVER_URL]),
+  ) as Record<StyleName, string>
 }

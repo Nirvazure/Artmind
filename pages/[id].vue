@@ -60,6 +60,9 @@
               :model-styles-loading="modelStylesLoading"
               :saving-to-gallery="savingToGallery"
               :can-save-to-gallery="canSaveToGallery"
+              :show-save-to-gallery="showSaveToGallery"
+              :show-update-artwork="showUpdateArtwork"
+              :can-open-artwork-action-dialog="canOpenArtworkActionDialog"
               :current-artwork-id="id"
               :is-existing-owned="isExistingOwned"
               :updating="updatingArtwork"
@@ -89,6 +92,13 @@
 <script setup lang="ts">
 import VanillaTilt from 'vanilla-tilt'
 
+import { normalizeArtworkTitle } from '~/utils/analysis-helpers'
+import {
+  buildArtworkActionPermissions,
+  canSubmitArtworkAction,
+} from '~/utils/artwork-action-permissions'
+import { normalizePaintersInput } from '~/utils/painter-options'
+
 definePageMeta({ layout: 'home' })
 
 const route = useRoute()
@@ -100,6 +110,7 @@ const artworkStore = useArtworkStore()
 const auth = useAuth()
 const toast = useToast()
 const { classifyByUrl, classifyByFile } = useClassifier()
+const analysisNotifications = useAnalysisNotifications()
 
 const artwork = ref<import('~/stores/artwork').Artwork | null>(null)
 const loading = ref(false)
@@ -190,14 +201,27 @@ const uploadBindings = computed(() => ({
   fileName: uploadFileName.value,
   previewUrl: displayImageSrc.value || undefined,
 }))
-const canSaveToGallery = computed(
-  () => !!result.value && !loading.value && !savingToGallery.value && !isExistingOwned.value,
-)
 const isExistingOwned = computed(() => {
   const a = artwork.value
   const uid = auth.user.value?.id
   return !!(a && uid && a.userId === uid && analyzeMode.value && !manualResult.value)
 })
+const artworkActionPermissions = computed(() =>
+  buildArtworkActionPermissions({
+    authLoading: auth.loading.value,
+    isAuthenticated: auth.isAuthenticated.value,
+    hasResult: !!result.value,
+    isExistingOwned: isExistingOwned.value,
+  }),
+)
+const showSaveToGallery = computed(() => artworkActionPermissions.value.showSaveToGallery)
+const showUpdateArtwork = computed(() => artworkActionPermissions.value.showUpdateArtwork)
+const canOpenArtworkActionDialog = computed(
+  () => artworkActionPermissions.value.canOpenArtworkActionDialog,
+)
+const canSaveToGallery = computed(
+  () => showSaveToGallery.value && !loading.value && !savingToGallery.value,
+)
 const aiTopStyle = computed(() => result.value?.styles[0]?.name?.trim() ?? '')
 const styleSelectItems = computed(() => {
   const items: Array<{ title: string; value: string }> = []
@@ -218,29 +242,46 @@ const styleSelectItems = computed(() => {
   return items
 })
 
-function normalizePaintersInput(values: string[]): string[] {
-  const normalized: string[] = []
-  const seen = new Set<string>()
-  for (const value of values) {
-    const item = value.trim()
-    if (!item) continue
-    const key = item.toLowerCase()
-    if (seen.has(key)) continue
-    seen.add(key)
-    normalized.push(item)
-  }
-  return normalized
-}
-
 function syncEditableFromResult() {
   const r = result.value
   if (!r) return
   const a = artwork.value
-  title.value = (a?.title || r.styles[0]?.name || '').trim()
+  title.value = a ? a.title : ''
   selectedStyle.value = (a?.style || r.styles[0]?.name || '').trim()
   editablePainters.value = normalizePaintersInput(
     a?.analysisResult?.painters?.length ? a.analysisResult.painters : r.painters,
   ).slice(0, 3)
+}
+
+async function runAnalysisRequest(
+  executor: () => Promise<NonNullable<typeof manualResult.value>>,
+  options: { requestPermission: boolean; showStartNotice: boolean },
+) {
+  if (options.showStartNotice) {
+    toast.info('分析可能需要较长时间，可以切到别的标签页等待，但不要关闭或刷新当前页面。')
+  }
+
+  await analysisNotifications.prepareForAnalysis({ requestPermission: options.requestPermission })
+
+  try {
+    const res = await executor()
+    const topStyle = res.styles[0]?.name?.trim()
+    const notified = await analysisNotifications.notifyIfHidden('ArtMind 分析完成', {
+      body: topStyle ? `识别结果：${topStyle}` : '返回页面查看分析结果。',
+      tag: 'artmind-analysis-complete',
+    })
+    if (!notified) {
+      toast.success(topStyle ? `分析完成：${topStyle}` : '分析完成')
+    }
+    return res
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : '请返回页面重试'
+    await analysisNotifications.notifyIfHidden('ArtMind 分析失败', {
+      body: message,
+      tag: 'artmind-analysis-failed',
+    })
+    throw e
+  }
 }
 
 async function loadModelStyles() {
@@ -320,7 +361,10 @@ async function loadArtwork() {
       if (inFlightAnalyzeKey.value === autoKey) return
       inFlightAnalyzeKey.value = autoKey
       try {
-        const res = await classifyByUrl(a.imageUrl)
+        const res = await runAnalysisRequest(() => classifyByUrl(a.imageUrl), {
+          requestPermission: false,
+          showStartNotice: false,
+        })
         const uid = auth.user.value?.id
         if (uid && a.userId === uid) {
           const updated = await artworkStore.updateArtworkAnalysis(a.id, {
@@ -390,9 +434,16 @@ async function analyze() {
   error.value = ''
   inFlightAnalyzeKey.value = analyzeKey
   try {
-    const res = pendingFile.value
-      ? await classifyByFile(pendingFile.value)
-      : await classifyByUrl(baseImageUrl as string)
+    const res = await runAnalysisRequest(
+      () =>
+        pendingFile.value
+          ? classifyByFile(pendingFile.value)
+          : classifyByUrl(baseImageUrl as string),
+      {
+        requestPermission: true,
+        showStartNotice: true,
+      },
+    )
     manualResult.value = res
     syncEditableFromResult()
     await loadModelStyles()
@@ -414,6 +465,7 @@ async function saveToGallery(draft?: {
   selectedStyle: string
   editablePainters: string[]
 }) {
+  if (!canSubmitArtworkAction('save', artworkActionPermissions.value)) return
   const r = result.value
   if (!r) return
   savingToGallery.value = true
@@ -428,7 +480,7 @@ async function saveToGallery(draft?: {
       r.styles[0]?.name ||
       ''
     ).trim()
-    const resolvedTitle = (draft?.title || title.value || resolvedStyle || '未命名').trim()
+    const resolvedTitle = normalizeArtworkTitle(draft?.title ?? title.value)
     const created = await artworkStore.addArtwork({
       title: resolvedTitle,
       style: resolvedStyle,
@@ -460,6 +512,7 @@ async function updateOwnedArtwork(draft?: {
   selectedStyle: string
   editablePainters: string[]
 }) {
+  if (!canSubmitArtworkAction('update', artworkActionPermissions.value)) return
   const a = artwork.value
   const r = result.value
   if (!a || !r) return
@@ -475,7 +528,7 @@ async function updateOwnedArtwork(draft?: {
       r.styles[0]?.name ||
       ''
     ).trim()
-    const resolvedTitle = (draft?.title || title.value || resolvedStyle || '未命名').trim()
+    const resolvedTitle = normalizeArtworkTitle(draft?.title ?? title.value)
     const updated = await artworkStore.patchArtwork(a.id, {
       title: resolvedTitle,
       style: resolvedStyle,

@@ -6,6 +6,7 @@ import { getImageDimensions } from '../../utils/image-dimensions'
 import { copyFromTempToArtworks } from '../../utils/storage'
 import { insertStyleCorrection } from '../../utils/style-corrections'
 import { randomUUID } from 'node:crypto'
+import { normalizeArtworkTitle } from '../../../utils/analysis-helpers'
 
 export default defineEventHandler(async (event) => {
   const userId = await getUserIdFromToken(event)
@@ -21,19 +22,37 @@ export default defineEventHandler(async (event) => {
     aiPainters?: string[]
     analysisResult?: import('../../utils/artworks-data').ArtworkAnalysisResult
   }>(event)
-  if (!body?.title || !body?.style || !body?.imageUrl) {
+
+  if (
+    !body ||
+    typeof body.title !== 'string' ||
+    typeof body.style !== 'string' ||
+    typeof body.imageUrl !== 'string'
+  ) {
     throw createError({
       statusCode: 400,
-      message: 'Missing title, style, or imageUrl',
+      message: 'Missing or invalid title, style, or imageUrl',
     })
   }
-  const imageUrl = await copyFromTempToArtworks(body.imageUrl)
+
+  const title = normalizeArtworkTitle(body.title)
+  const style = body.style.trim()
+  const rawImageUrl = body.imageUrl.trim()
+
+  if (!style || !rawImageUrl) {
+    throw createError({
+      statusCode: 400,
+      message: 'Missing style or imageUrl',
+    })
+  }
+
+  const imageUrl = await copyFromTempToArtworks(rawImageUrl)
   const dims = await getImageDimensions(imageUrl)
   const newArtwork: Artwork = {
     id: randomUUID(),
     userId,
-    title: body.title,
-    style: body.style,
+    title,
+    style,
     imageUrl,
     isPublic: body.isPublic ?? false,
     likes: [],
@@ -45,7 +64,7 @@ export default defineEventHandler(async (event) => {
   const created = await insertArtwork(newArtwork)
 
   if (body.analysisResult) {
-    const aiTopStyle = body.analysisResult.styles[0]?.name ?? body.style
+    const aiTopStyle = body.analysisResult.styles[0]?.name ?? style
     const userPainters = body.analysisResult.painters ?? []
     const aiPainters = body.aiPainters ?? userPainters
     try {
@@ -55,7 +74,7 @@ export default defineEventHandler(async (event) => {
         imageUrl,
         aiTopStyle,
         aiStyles: body.analysisResult.styles,
-        userStyle: body.style,
+        userStyle: style,
         aiPainters,
         userPainters,
         rawLabels: body.analysisResult.rawLabels,
@@ -67,7 +86,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const supabase = getSupabaseAdmin()
-    await supabase.from('uploads').update({ saved: true }).eq('temp_path', body.imageUrl)
+    await supabase.from('uploads').update({ saved: true }).eq('temp_path', rawImageUrl)
   } catch {
     // uploads 标记失败不影响保存
   }
