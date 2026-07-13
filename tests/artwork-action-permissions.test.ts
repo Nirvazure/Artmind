@@ -5,9 +5,10 @@ import {
   buildArtworkActionPermissions,
   canSubmitArtworkAction,
   resolveArtworkAction,
+  resolveDefaultSelectedStyle,
 } from '../utils/artwork-action-permissions'
 
-test('未登录普通分析结果不显示保存也不显示更新', () => {
+test('unauthenticated users cannot save or update analysis results', () => {
   const permissions = buildArtworkActionPermissions({
     authLoading: false,
     isAuthenticated: false,
@@ -22,7 +23,7 @@ test('未登录普通分析结果不显示保存也不显示更新', () => {
   })
 })
 
-test('已登录非本人分析结果显示保存不显示更新', () => {
+test('authenticated users can save analysis results for artworks they do not own', () => {
   const permissions = buildArtworkActionPermissions({
     authLoading: false,
     isAuthenticated: true,
@@ -35,7 +36,7 @@ test('已登录非本人分析结果显示保存不显示更新', () => {
   assert.equal(permissions.canOpenArtworkActionDialog, true)
 })
 
-test('已登录本人已保存作品只显示更新', () => {
+test('authenticated users can update analysis results for artworks they own', () => {
   const permissions = buildArtworkActionPermissions({
     authLoading: false,
     isAuthenticated: true,
@@ -48,7 +49,7 @@ test('已登录本人已保存作品只显示更新', () => {
   assert.equal(permissions.canOpenArtworkActionDialog, true)
 })
 
-test('鉴权加载中两个入口都隐藏', () => {
+test('auth loading hides both save and update entry points', () => {
   const permissions = buildArtworkActionPermissions({
     authLoading: true,
     isAuthenticated: true,
@@ -63,7 +64,7 @@ test('鉴权加载中两个入口都隐藏', () => {
   })
 })
 
-test('动作解析与提交守卫只放行当前可用操作', () => {
+test('action resolution and submit guard only allow the current mode', () => {
   const saveOnly = {
     showSaveToGallery: true,
     showUpdateArtwork: false,
@@ -89,4 +90,67 @@ test('动作解析与提交守卫只放行当前可用操作', () => {
   assert.equal(canSubmitArtworkAction('update', updateOnly), true)
   assert.equal(canSubmitArtworkAction('save', updateOnly), false)
   assert.equal(canSubmitArtworkAction('save', none), false)
+})
+
+test('save action prefers AI top style over saved artwork style', () => {
+  assert.equal(
+    resolveDefaultSelectedStyle({
+      action: 'save',
+      artworkStyle: '波普艺术',
+      aiTopStyle: '野兽派',
+    }),
+    '野兽派',
+  )
+})
+
+test('update action prefers saved artwork style over AI top style', () => {
+  assert.equal(
+    resolveDefaultSelectedStyle({
+      action: 'update',
+      artworkStyle: '波普艺术',
+      aiTopStyle: '野兽派',
+    }),
+    '波普艺术',
+  )
+})
+
+test('update action falls back to AI top style when artwork style is empty', () => {
+  assert.equal(
+    resolveDefaultSelectedStyle({
+      action: 'update',
+      artworkStyle: '   ',
+      aiTopStyle: '野兽派',
+    }),
+    '野兽派',
+  )
+})
+
+test('null action still prefers AI top style first', () => {
+  assert.equal(
+    resolveDefaultSelectedStyle({
+      action: null,
+      artworkStyle: '波普艺术',
+      aiTopStyle: '野兽派',
+    }),
+    '野兽派',
+  )
+})
+
+test('default style resolution trims whitespace before comparison', () => {
+  assert.equal(
+    resolveDefaultSelectedStyle({
+      action: 'update',
+      artworkStyle: '  波普艺术  ',
+      aiTopStyle: '  野兽派  ',
+    }),
+    '波普艺术',
+  )
+  assert.equal(
+    resolveDefaultSelectedStyle({
+      action: 'save',
+      artworkStyle: '  波普艺术  ',
+      aiTopStyle: '  野兽派  ',
+    }),
+    '野兽派',
+  )
 })

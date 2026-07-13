@@ -96,6 +96,8 @@ import { normalizeArtworkTitle } from '~/utils/analysis-helpers'
 import {
   buildArtworkActionPermissions,
   canSubmitArtworkAction,
+  resolveArtworkAction,
+  resolveDefaultSelectedStyle,
 } from '~/utils/artwork-action-permissions'
 import { normalizePaintersInput } from '~/utils/painter-options'
 
@@ -216,6 +218,7 @@ const artworkActionPermissions = computed(() =>
 )
 const showSaveToGallery = computed(() => artworkActionPermissions.value.showSaveToGallery)
 const showUpdateArtwork = computed(() => artworkActionPermissions.value.showUpdateArtwork)
+const currentArtworkAction = computed(() => resolveArtworkAction(artworkActionPermissions.value))
 const canOpenArtworkActionDialog = computed(
   () => artworkActionPermissions.value.canOpenArtworkActionDialog,
 )
@@ -247,7 +250,11 @@ function syncEditableFromResult() {
   if (!r) return
   const a = artwork.value
   title.value = a ? a.title : ''
-  selectedStyle.value = (a?.style || r.styles[0]?.name || '').trim()
+  selectedStyle.value = resolveDefaultSelectedStyle({
+    action: currentArtworkAction.value,
+    artworkStyle: a?.style,
+    aiTopStyle: r.styles[0]?.name,
+  })
   editablePainters.value = normalizePaintersInput(
     a?.analysisResult?.painters?.length ? a.analysisResult.painters : r.painters,
   ).slice(0, 3)
