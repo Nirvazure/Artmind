@@ -1,5 +1,5 @@
 /** keremberke/yolov8m-painting-classification 27 流派 -> 中文 */
-export const KEREMBERKE_TO_STYLE: Record<string, string> = {
+export const KEREMBERKE_TO_STYLE = {
   Abstract_Expressionism: '抽象表现主义',
   Action_painting: '行动绘画',
   Analytical_Cubism: '分析立体主义',
@@ -27,7 +27,9 @@ export const KEREMBERKE_TO_STYLE: Record<string, string> = {
   Symbolism: '象征主义',
   Synthetic_Cubism: '综合立体主义',
   Ukiyo_e: '浮世绘',
-}
+} as const
+
+export type StyleName = (typeof KEREMBERKE_TO_STYLE)[keyof typeof KEREMBERKE_TO_STYLE]
 
 const STYLE_TO_KEREMBERKE: Record<string, string> = Object.fromEntries(
   Object.entries(KEREMBERKE_TO_STYLE).map(([en, zh]) => [zh, en]),
@@ -52,4 +54,10 @@ export function getEnglishStyleName(
 
 export const STYLE_NAMES = [
   ...new Set(Object.values(KEREMBERKE_TO_STYLE)),
-].sort() as readonly string[]
+].sort() as readonly StyleName[]
+
+const STYLE_NAME_SET = new Set<string>(STYLE_NAMES)
+
+export function isStyleName(style: string): style is StyleName {
+  return STYLE_NAME_SET.has(style)
+}

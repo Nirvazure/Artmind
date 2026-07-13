@@ -10,9 +10,9 @@ export interface StylePrediction {
 const FALLBACK_STYLE = '印象派'
 
 function mapKeremberkeLabelToStyle(label: string): string {
-  return (
-    KEREMBERKE_TO_STYLE[label] ?? KEREMBERKE_TO_STYLE[label.replace(/\s+/g, '_')] ?? FALLBACK_STYLE
-  )
+  const directKey = label as keyof typeof KEREMBERKE_TO_STYLE
+  const normalizedKey = label.replace(/\s+/g, '_') as keyof typeof KEREMBERKE_TO_STYLE
+  return KEREMBERKE_TO_STYLE[directKey] ?? KEREMBERKE_TO_STYLE[normalizedKey] ?? FALLBACK_STYLE
 }
 
 /**

@@ -1,8 +1,9 @@
 import { paintersListData } from '../../data/painters-list'
+import type { StyleName } from '../../../utils/style-labels'
 
 export interface PainterItem {
   name: string
-  style: string
+  style: StyleName
   verified?: boolean
 }
 

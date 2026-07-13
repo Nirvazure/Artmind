@@ -20,7 +20,7 @@
             density="compact"
             hide-details
             class="field-input"
-            placeholder="输入标题"
+            placeholder="可留空"
           />
         </div>
 
@@ -83,6 +83,8 @@
 </template>
 
 <script setup lang="ts">
+import { getDefaultPaintersForStyle, getPainterOptionsByStyle } from '~/utils/painter-options'
+
 interface SaveDraft {
   title: string
   selectedStyle: string
@@ -96,7 +98,7 @@ const props = withDefaults(
     selectedStyle: string
     editablePainters: string[]
     styleSelectItems: { title: string; value: string }[]
-    painterItems: string[]
+    paintersCatalog: { name: string; style: string }[]
     modelStylesLoading: boolean
     saving?: boolean
     updating?: boolean
@@ -119,6 +121,11 @@ const draft = reactive<SaveDraft>({
   selectedStyle: '',
   editablePainters: [],
 })
+let syncingFromProps = false
+
+const painterItems = computed(() =>
+  getPainterOptionsByStyle(draft.selectedStyle, props.paintersCatalog),
+)
 
 const confirmLabel = computed(() => {
   if (props.saving) return '正在入库…'
@@ -127,15 +134,27 @@ const confirmLabel = computed(() => {
 })
 
 function syncDraftFromProps() {
+  syncingFromProps = true
   draft.title = props.title
   draft.selectedStyle = props.selectedStyle
   draft.editablePainters = [...props.editablePainters]
+  queueMicrotask(() => {
+    syncingFromProps = false
+  })
 }
 
 watch(
   () => props.modelValue,
   (open) => {
     if (open) syncDraftFromProps()
+  },
+)
+
+watch(
+  () => draft.selectedStyle,
+  (style, oldStyle) => {
+    if (!props.modelValue || syncingFromProps || style === oldStyle) return
+    draft.editablePainters = getDefaultPaintersForStyle(style, props.paintersCatalog)
   },
 )
 
