@@ -28,11 +28,11 @@
       <Transition name="hero-view-swap" mode="out-in">
         <div v-if="outputMode === 'polished'" key="polished" class="hero-body">
           <div class="hero-title-row">
-            <h2 class="hero-zh">{{ topStyle.name }}</h2>
+            <h2 class="hero-zh">{{ displayStyleName }}</h2>
             <p v-if="englishName" class="hero-en">{{ englishName }}</p>
-            <span class="hero-confidence">{{ confidencePct }}%</span>
+            <span v-if="confidencePct !== null" class="hero-confidence">{{ confidencePct }}%</span>
           </div>
-          <div class="hero-bar-track">
+          <div v-if="confidencePct !== null" class="hero-bar-track">
             <div class="hero-bar-fill" :style="{ width: `${confidencePct}%` }" />
           </div>
           <p v-if="secondaryLine" class="hero-secondary">{{ secondaryLine }}</p>
@@ -57,10 +57,12 @@ import { formatKeremberkeLabel, getEnglishStyleName } from '~/utils/style-labels
 const props = withDefaults(
   defineProps<{
     styles: { name: string; confidence: number }[]
+    displayStyleName?: string
     rawLabels?: Array<{ label: string; score: number }>
     outputMode: 'polished' | 'raw'
   }>(),
   {
+    displayStyleName: '',
     rawLabels: undefined,
   },
 )
@@ -70,15 +72,33 @@ defineEmits<{
 }>()
 
 const topStyle = computed(() => props.styles[0] ?? { name: '—', confidence: 0 })
+const displayStyleName = computed(() => props.displayStyleName.trim() || topStyle.value.name)
+const isDisplayStyleOverridden = computed(
+  () => !!displayStyleName.value && displayStyleName.value !== topStyle.value.name,
+)
 
-const confidencePct = computed(() => Math.round(topStyle.value.confidence * 100))
+const confidencePct = computed(() =>
+  isDisplayStyleOverridden.value ? null : Math.round(topStyle.value.confidence * 100),
+)
 
-const englishName = computed(() => getEnglishStyleName(topStyle.value.name, props.rawLabels))
+const englishName = computed(() =>
+  getEnglishStyleName(
+    displayStyleName.value,
+    isDisplayStyleOverridden.value ? undefined : props.rawLabels,
+  ),
+)
 
 const secondaryLine = computed(() => {
+  if (isDisplayStyleOverridden.value) {
+    const topName = topStyle.value.name.trim()
+    if (!topName) return ''
+    const aiConfidence = Math.round(topStyle.value.confidence * 100)
+    return aiConfidence > 0 ? `AI 推荐：${topName} ${aiConfidence}%` : `AI 推荐：${topName}`
+  }
+
   const rest = props.styles.slice(1, 3)
   if (rest.length === 0) return ''
-  return `次选  ${rest.map((s) => `${s.name} ${(s.confidence * 100).toFixed(0)}%`).join('  ·  ')}`
+  return `次选 ${rest.map((s) => `${s.name} ${(s.confidence * 100).toFixed(0)}%`).join('  ·  ')}`
 })
 
 const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
