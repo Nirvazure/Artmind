@@ -39,6 +39,7 @@
           v-model="saveDialogOpen"
           :title="title"
           :selected-style="selectedStyle"
+          :ai-recommended-style="result.styles[0]?.name ?? ''"
           :editable-painters="editablePainters"
           :style-select-items="styleSelectItems"
           :painters-catalog="paintersCatalog"

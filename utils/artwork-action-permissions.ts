@@ -1,5 +1,9 @@
 export type ArtworkAction = 'save' | 'update'
 
+function normalizeOptionalValue(value?: string | null): string {
+  return value?.trim() ?? ''
+}
+
 export interface ArtworkActionPermissionInput {
   authLoading: boolean
   isAuthenticated: boolean
@@ -38,6 +42,21 @@ export function resolveArtworkAction(permissions: ArtworkActionPermissions): Art
   if (permissions.showUpdateArtwork) return 'update'
   if (permissions.showSaveToGallery) return 'save'
   return null
+}
+
+export function resolveDefaultSelectedStyle(input: {
+  action: ArtworkAction | null
+  artworkStyle?: string | null
+  aiTopStyle?: string | null
+}): string {
+  const artworkStyle = normalizeOptionalValue(input.artworkStyle)
+  const aiTopStyle = normalizeOptionalValue(input.aiTopStyle)
+
+  if (input.action === 'update') {
+    return artworkStyle || aiTopStyle || ''
+  }
+
+  return aiTopStyle || artworkStyle || ''
 }
 
 export function canSubmitArtworkAction(
