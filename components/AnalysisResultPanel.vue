@@ -12,13 +12,14 @@
       <div v-else-if="result" key="result" class="glass-content">
         <AnalysisHeroLabel
           :styles="result.styles"
+          :display-style-name="relatedStyle"
           :raw-labels="result.rawLabels"
           :output-mode="outputMode"
           @update:output-mode="$emit('update:outputMode', $event)"
         />
         <AnalysisHeroPainters
           :painters="result.painters"
-          :style-name="result.styles[0]?.name ?? ''"
+          :style-name="relatedStyle"
           :painters-catalog="paintersCatalog"
         />
         <RelatedArtworksStrip

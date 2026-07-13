@@ -500,12 +500,22 @@ async function saveToGallery(draft?: {
         rawLabels: r.rawLabels,
       },
     })
-    manualResult.value = null
-    title.value = ''
-    selectedStyle.value = ''
-    editablePainters.value = []
+    // Keep the freshly created artwork visible through the route transition
+    // to avoid flashing back to the previously opened artwork.
+    artwork.value = created
+    manualResult.value = created.analysisResult
+      ? {
+          ...created.analysisResult,
+          imageUrl: created.imageUrl,
+        }
+      : {
+          styles: r.styles,
+          painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
+          imageUrl: created.imageUrl,
+          rawLabels: r.rawLabels,
+        }
+    syncEditableFromResult()
     toast.success('已保存到你的画廊（仅自己可见）')
-    await new Promise<void>((resolve) => setTimeout(resolve, 150))
     await router.replace(`/${created.id}?analyse=true`)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '保存失败'
