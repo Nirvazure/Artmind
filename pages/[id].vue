@@ -54,6 +54,7 @@
               v-model:title="title"
               v-model:selected-style="selectedStyle"
               v-model:editable-painters="editablePainters"
+              v-model:save-dialog-open="saveDialogOpen"
               :view-phase="viewPhase"
               :result="result"
               :style-select-items="styleSelectItems"
@@ -136,6 +137,7 @@ const modelStylesLoading = ref(false)
 const inFlightAnalyzeKey = ref<string | null>(null)
 const savingToGallery = ref(false)
 const updatingArtwork = ref(false)
+const saveDialogOpen = ref(false)
 const outputMode = ref<'polished' | 'raw'>('polished')
 
 const result = computed(() => {
@@ -336,32 +338,47 @@ async function switchToRandom() {
 async function loadArtwork() {
   error.value = ''
   notFound.value = false
-  if (analyzeMode.value) loading.value = true
-  else loading.value = false
+
+  if (!id.value) {
+    error.value = '无效作品 ID'
+    notFound.value = true
+    loading.value = false
+    return
+  }
+
+  if (artwork.value?.id === id.value && artwork.value.analysisResult) {
+    loading.value = false
+    syncEditableFromResult()
+    if (analyzeMode.value) await loadModelStyles()
+    return
+  }
+
   manualResult.value = null
   if (uploadedImageUrl.value) {
     URL.revokeObjectURL(uploadedImageUrl.value)
     uploadedImageUrl.value = null
     pendingFile.value = null
   }
-  if (!id.value) {
-    error.value = '无效作品 ID'
-    notFound.value = true
-    return
-  }
+
   try {
     let a = artworkStore.artworks.find((x) => x.id === id.value)
     if (!a) {
+      if (analyzeMode.value) loading.value = true
+      else loading.value = false
       a = (await artworkStore.fetchArtworkById(id.value)) ?? undefined
     }
+
     if (!a) {
       error.value = '作品不存在'
       notFound.value = true
       artwork.value = null
+      loading.value = false
       return
     }
+
     artwork.value = a
     syncEditableFromResult()
+    loading.value = analyzeMode.value && !a.analysisResult
 
     if (analyzeMode.value && !a.analysisResult) {
       const autoKey = `auto:${a.id}:${a.imageUrl}`
@@ -500,20 +517,10 @@ async function saveToGallery(draft?: {
         rawLabels: r.rawLabels,
       },
     })
-    // Keep the freshly created artwork visible through the route transition
-    // to avoid flashing back to the previously opened artwork.
+    saveDialogOpen.value = false
+    await nextTick()
     artwork.value = created
-    manualResult.value = created.analysisResult
-      ? {
-          ...created.analysisResult,
-          imageUrl: created.imageUrl,
-        }
-      : {
-          styles: r.styles,
-          painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
-          imageUrl: created.imageUrl,
-          rawLabels: r.rawLabels,
-        }
+    manualResult.value = null
     syncEditableFromResult()
     toast.success('已保存到你的画廊（仅自己可见）')
     await router.replace(`/${created.id}?analyse=true`)
@@ -556,7 +563,10 @@ async function updateOwnedArtwork(draft?: {
         rawLabels: r.rawLabels,
       },
     })
+    saveDialogOpen.value = false
+    await nextTick()
     artwork.value = updated
+    syncEditableFromResult()
     toast.success('作品已更新')
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '更新失败'
