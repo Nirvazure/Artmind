@@ -505,25 +505,37 @@ async function saveToGallery(draft?: {
       ''
     ).trim()
     const resolvedTitle = normalizeArtworkTitle(draft?.title ?? title.value)
+    const analysisResult = {
+      styles: r.styles,
+      painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
+      rawLabels: r.rawLabels,
+    }
     const created = await artworkStore.addArtwork({
       title: resolvedTitle,
       style: resolvedStyle,
       imageUrl: r.imageUrl,
       isPublic: false,
       aiPainters: r.painters,
-      analysisResult: {
-        styles: r.styles,
-        painters: normalizedPainters.length > 0 ? normalizedPainters : r.painters,
-        rawLabels: r.rawLabels,
-      },
+      analysisResult,
     })
     saveDialogOpen.value = false
     await nextTick()
-    artwork.value = created
-    manualResult.value = null
+    // Keep result continuous across the route transition: hydrate artwork + bridge
+    // via manualResult until analyse=true is on the URL, then drop the bridge.
+    const hydratedAnalysis = created.analysisResult ?? analysisResult
+    artwork.value = {
+      ...created,
+      analysisResult: hydratedAnalysis,
+    }
+    manualResult.value = {
+      ...hydratedAnalysis,
+      imageUrl: created.imageUrl,
+    }
     syncEditableFromResult()
     toast.success('已保存到你的画廊（仅自己可见）')
     await router.replace(`/${created.id}?analyse=true`)
+    manualResult.value = null
+    syncEditableFromResult()
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '保存失败'
   } finally {
