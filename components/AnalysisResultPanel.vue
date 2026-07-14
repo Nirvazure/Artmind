@@ -32,10 +32,10 @@
           :can-save-to-gallery="canSaveToGallery"
           :is-existing-owned="isExistingOwned"
           :updating="updating"
-          @open-save-dialog="saveDialogOpen = true"
+          @open-save-dialog="emit('update:saveDialogOpen', true)"
         />
         <AnalysisSaveDialog
-          v-model="saveDialogOpen"
+          :model-value="saveDialogOpen"
           :title="title"
           :selected-style="selectedStyle"
           :editable-painters="editablePainters"
@@ -45,6 +45,7 @@
           :saving="savingToGallery"
           :updating="updating"
           :is-existing-owned="isExistingOwned"
+          @update:model-value="emit('update:saveDialogOpen', $event)"
           @confirm="onSaveDialogConfirm"
         />
       </div>
@@ -75,11 +76,13 @@ const props = withDefaults(
     currentArtworkId?: string
     isExistingOwned?: boolean
     updating?: boolean
+    saveDialogOpen?: boolean
   }>(),
   {
     currentArtworkId: '',
     isExistingOwned: false,
     updating: false,
+    saveDialogOpen: false,
   },
 )
 
@@ -94,23 +97,12 @@ const emit = defineEmits<{
   'update:title': [value: string]
   'update:selectedStyle': [value: string]
   'update:editablePainters': [value: string[]]
+  'update:saveDialogOpen': [value: boolean]
   saveToGallery: [draft?: SaveDraft]
   updateArtwork: [draft?: SaveDraft]
 }>()
 
-const saveDialogOpen = ref(false)
-
-watch(
-  () => props.updating,
-  (val, oldVal) => {
-    if (oldVal && !val) saveDialogOpen.value = false
-  },
-)
-
 function onSaveDialogConfirm(draft: SaveDraft) {
-  emit('update:title', draft.title)
-  emit('update:selectedStyle', draft.selectedStyle)
-  emit('update:editablePainters', draft.editablePainters)
   if (props.isExistingOwned) {
     emit('updateArtwork', draft)
   } else {
