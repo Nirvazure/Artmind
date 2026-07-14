@@ -20,7 +20,7 @@
             density="compact"
             hide-details
             class="field-input"
-            placeholder="输入标题"
+            placeholder="可留空"
           />
         </div>
 
@@ -38,6 +38,10 @@
             :loading="modelStylesLoading"
             placeholder="搜索流派"
           />
+          <div v-if="showAiRecommendation" class="ai-recommendation">
+            <p class="ai-recommendation-title">AI 推荐流派：{{ normalizedAiRecommendedStyle }}</p>
+            <p class="ai-recommendation-note">当前默认值保留作品已保存流派</p>
+          </div>
         </div>
 
         <div class="field-group">
@@ -83,6 +87,8 @@
 </template>
 
 <script setup lang="ts">
+import { getDefaultPaintersForStyle, getPainterOptionsByStyle } from '~/utils/painter-options'
+
 interface SaveDraft {
   title: string
   selectedStyle: string
@@ -96,13 +102,15 @@ const props = withDefaults(
     selectedStyle: string
     editablePainters: string[]
     styleSelectItems: { title: string; value: string }[]
-    painterItems: string[]
+    paintersCatalog: { name: string; style: string }[]
     modelStylesLoading: boolean
+    aiRecommendedStyle?: string
     saving?: boolean
     updating?: boolean
     isExistingOwned?: boolean
   }>(),
   {
+    aiRecommendedStyle: '',
     saving: false,
     updating: false,
     isExistingOwned: false,
@@ -119,23 +127,47 @@ const draft = reactive<SaveDraft>({
   selectedStyle: '',
   editablePainters: [],
 })
+let syncingFromProps = false
+
+const painterItems = computed(() =>
+  getPainterOptionsByStyle(draft.selectedStyle, props.paintersCatalog),
+)
 
 const confirmLabel = computed(() => {
-  if (props.saving) return '正在入库…'
-  if (props.updating) return '更新中…'
+  if (props.saving) return '正在入库...'
+  if (props.updating) return '更新中...'
   return props.isExistingOwned ? '确认更新' : '确认保存'
 })
 
+const normalizedAiRecommendedStyle = computed(() => props.aiRecommendedStyle?.trim() ?? '')
+const showAiRecommendation = computed(() => {
+  if (!props.isExistingOwned) return false
+  if (!normalizedAiRecommendedStyle.value) return false
+  return normalizedAiRecommendedStyle.value !== draft.selectedStyle.trim()
+})
+
 function syncDraftFromProps() {
+  syncingFromProps = true
   draft.title = props.title
   draft.selectedStyle = props.selectedStyle
   draft.editablePainters = [...props.editablePainters]
+  queueMicrotask(() => {
+    syncingFromProps = false
+  })
 }
 
 watch(
   () => props.modelValue,
   (open) => {
     if (open) syncDraftFromProps()
+  },
+)
+
+watch(
+  () => draft.selectedStyle,
+  (style, oldStyle) => {
+    if (!props.modelValue || syncingFromProps || style === oldStyle) return
+    draft.editablePainters = getDefaultPaintersForStyle(style, props.paintersCatalog)
   },
 )
 
@@ -223,6 +255,31 @@ function onConfirm() {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ui-muted);
+}
+
+.ai-recommendation {
+  margin-top: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(201, 169, 98, 0.12);
+  border: 1px solid rgba(201, 169, 98, 0.28);
+}
+
+.ai-recommendation-title,
+.ai-recommendation-note {
+  margin: 0;
+}
+
+.ai-recommendation-title {
+  color: var(--ui-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.ai-recommendation-note {
+  margin-top: 4px;
+  color: var(--ui-muted);
+  font-size: 0.72rem;
 }
 
 .field-input :deep(.v-field) {

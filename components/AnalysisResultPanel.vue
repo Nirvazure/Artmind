@@ -12,13 +12,14 @@
       <div v-else-if="result" key="result" class="glass-content">
         <AnalysisHeroLabel
           :styles="result.styles"
+          :display-style-name="relatedStyle"
           :raw-labels="result.rawLabels"
           :output-mode="outputMode"
           @update:output-mode="$emit('update:outputMode', $event)"
         />
         <AnalysisHeroPainters
           :painters="result.painters"
-          :style-name="result.styles[0]?.name ?? ''"
+          :style-name="relatedStyle"
           :painters-catalog="paintersCatalog"
         />
         <RelatedArtworksStrip
@@ -30,17 +31,19 @@
         />
         <AnalysisConfirmCard
           :can-save-to-gallery="canSaveToGallery"
-          :is-existing-owned="isExistingOwned"
+          :show-save-to-gallery="showSaveToGallery"
+          :show-update-artwork="showUpdateArtwork"
           :updating="updating"
-          @open-save-dialog="emit('update:saveDialogOpen', true)"
+          @open-save-dialog="openArtworkActionDialog"
         />
         <AnalysisSaveDialog
           :model-value="saveDialogOpen"
           :title="title"
           :selected-style="selectedStyle"
+          :ai-recommended-style="result.styles[0]?.name ?? ''"
           :editable-painters="editablePainters"
           :style-select-items="styleSelectItems"
-          :painter-items="result.painters"
+          :painters-catalog="paintersCatalog"
           :model-styles-loading="modelStylesLoading"
           :saving="savingToGallery"
           :updating="updating"
@@ -73,6 +76,9 @@ const props = withDefaults(
     modelStylesLoading: boolean
     savingToGallery: boolean
     canSaveToGallery: boolean
+    showSaveToGallery: boolean
+    showUpdateArtwork: boolean
+    canOpenArtworkActionDialog: boolean
     currentArtworkId?: string
     isExistingOwned?: boolean
     updating?: boolean
@@ -103,11 +109,21 @@ const emit = defineEmits<{
 }>()
 
 function onSaveDialogConfirm(draft: SaveDraft) {
-  if (props.isExistingOwned) {
+  if (!props.canOpenArtworkActionDialog) return
+
+  if (props.showUpdateArtwork) {
     emit('updateArtwork', draft)
-  } else {
+    return
+  }
+
+  if (props.showSaveToGallery) {
     emit('saveToGallery', draft)
   }
+}
+
+function openArtworkActionDialog() {
+  if (!props.canOpenArtworkActionDialog) return
+  emit('update:saveDialogOpen', true)
 }
 
 interface PainterCatalogItem {
