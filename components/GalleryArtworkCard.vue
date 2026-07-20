@@ -29,11 +29,11 @@
       :class="{ collected: isCollected }"
       @click.stop="$emit('toggle-collect')"
     >
-      <v-icon :icon="isCollected ? 'mdi-bookmark' : 'mdi-bookmark-outline'" size="20" />
+      <v-icon :icon="isCollected ? 'mdi-bookmark' : 'mdi-bookmark-outline'" size="24" />
     </v-btn>
     <div class="artwork-card-overlay">
       <div class="overlay-content">
-        <p class="artwork-title">{{ item.title || '未命名' }}</p>
+        <p v-if="item.title" class="artwork-title">{{ item.title }}</p>
         <p class="artwork-style">{{ item.style || '—' }}</p>
         <div class="painter-avatars">
           <template v-if="painterNames.length > 0">
@@ -131,11 +131,11 @@ onUnmounted(() => {
   z-index: 3;
   min-width: 44px;
   min-height: 44px;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.96);
 }
 
 .artwork-fav-btn.collected {
-  color: rgb(var(--v-theme-primary));
+  color: #e5484d;
 }
 
 .artwork-card-overlay {

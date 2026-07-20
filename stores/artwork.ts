@@ -39,9 +39,32 @@ export interface Artwork {
 export const useArtworkStore = defineStore('artwork', {
   state: () => ({
     artworks: [] as Artwork[],
+
+    artworkById: {} as Record<string, Artwork>,
   }),
 
+  getters: {
+    cachedArtworkById:
+      (state) =>
+      (id: string): Artwork | null =>
+        state.artworkById[id] ?? state.artworks.find((a) => a.id === id) ?? null,
+  },
+
   actions: {
+    cacheArtwork(artwork: Artwork) {
+      this.artworkById[artwork.id] = artwork
+
+      const idx = this.artworks.findIndex((a) => a.id === artwork.id)
+      if (artwork.isPublic) {
+        if (idx === -1) this.artworks.unshift(artwork)
+        else this.artworks[idx] = artwork
+      } else if (idx !== -1) {
+        this.artworks.splice(idx, 1)
+      }
+
+      return artwork
+    },
+
     async fetchArtworks() {
       const supabase = useSupabaseClient()
 
@@ -59,13 +82,17 @@ export const useArtworkStore = defineStore('artwork', {
 
       if (error) throw error
 
-      this.artworks = (data ?? []).map((row) =>
+      const artworks = (data ?? []).map((row) =>
         mapArtworkRow(row as Parameters<typeof mapArtworkRow>[0]),
       )
+      this.artworks = artworks
+      for (const artwork of artworks) {
+        this.artworkById[artwork.id] = artwork
+      }
     },
 
     async fetchArtworkById(id: string): Promise<Artwork | null> {
-      const cached = this.artworks.find((a) => a.id === id)
+      const cached = this.cachedArtworkById(id)
 
       if (cached) return cached
 
@@ -87,15 +114,7 @@ export const useArtworkStore = defineStore('artwork', {
 
       const artwork = mapArtworkRow(data as Parameters<typeof mapArtworkRow>[0])
 
-      const idx = this.artworks.findIndex((a) => a.id === id)
-
-      if (idx === -1) {
-        if (artwork.isPublic) this.artworks.push(artwork)
-      } else {
-        this.artworks[idx] = artwork
-      }
-
-      return artwork
+      return this.cacheArtwork(artwork)
     },
 
     async addArtwork(payload: {
@@ -125,9 +144,7 @@ export const useArtworkStore = defineStore('artwork', {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      if (created.isPublic) this.artworks.unshift(created)
-
-      return created
+      return this.cacheArtwork(created)
     },
 
     async patchArtwork(
@@ -159,16 +176,7 @@ export const useArtworkStore = defineStore('artwork', {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      const idx = this.artworks.findIndex((a) => a.id === id)
-
-      if (updated.isPublic) {
-        if (idx === -1) this.artworks.unshift(updated)
-        else this.artworks[idx] = updated
-      } else if (idx !== -1) {
-        this.artworks.splice(idx, 1)
-      }
-
-      return updated
+      return this.cacheArtwork(updated)
     },
 
     async toggleLike(id: string) {
@@ -181,7 +189,7 @@ export const useArtworkStore = defineStore('artwork', {
 
         if (!userId) throw new Error('请先登录')
 
-        const artwork = this.artworks.find((a) => a.id === id)
+        const artwork = this.cachedArtworkById(id)
 
         if (!artwork) return
 
@@ -236,11 +244,7 @@ export const useArtworkStore = defineStore('artwork', {
         headers,
       })
 
-      const idx = this.artworks.findIndex((a) => a.id === id)
-
-      if (idx !== -1) this.artworks[idx] = updated
-
-      return updated
+      return this.cacheArtwork(updated)
     },
   },
 })

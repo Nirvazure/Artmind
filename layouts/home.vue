@@ -12,31 +12,22 @@
       </v-btn>
       <v-btn v-else :to="'/gallery'" variant="text" class="text-none"> Gallery </v-btn>
       <ClientOnly>
-        <v-menu v-if="auth.user.value" location="bottom">
-          <template #activator="{ props }">
-            <v-btn v-bind="props" icon variant="text" class="ml-2">
-              <v-avatar size="36">
-                <v-img
-                  v-if="auth.user.value?.photo"
-                  :src="auth.user.value.photo"
-                  :alt="auth.user.value.name"
-                  cover
-                />
-                <span v-else class="text-body2">{{
-                  (auth.user.value?.name || 'U').charAt(0)
-                }}</span>
-              </v-avatar>
-            </v-btn>
-          </template>
-          <v-list density="compact">
-            <v-list-item
-              :to="`/user/${auth.user.value?.id}`"
-              title="个人主页"
-              prepend-icon="mdi-account"
+        <NuxtLink
+          v-if="auth.user.value"
+          :to="`/user/${auth.user.value.id}`"
+          class="user-entry ml-2"
+          aria-label="个人中心"
+        >
+          <v-avatar size="36" class="user-entry-avatar">
+            <v-img
+              v-if="auth.user.value?.photo"
+              :src="auth.user.value.photo"
+              :alt="auth.user.value.name"
+              cover
             />
-            <v-list-item title="退出登录" prepend-icon="mdi-logout" @click="auth.logout()" />
-          </v-list>
-        </v-menu>
+            <span v-else class="text-body2">{{ (auth.user.value?.name || 'U').charAt(0) }}</span>
+          </v-avatar>
+        </NuxtLink>
         <v-btn
           v-else-if="!auth.loading.value"
           variant="outlined"
@@ -102,25 +93,11 @@ const appBarClass = computed(() =>
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  scrollbar-width: none;
 }
 
 .default-main::-webkit-scrollbar {
-  width: 8px;
-}
-
-.default-main::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.default-main::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 4px;
-}
-
-.default-main::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.28);
+  display: none;
 }
 
 .app-bar-shell {
@@ -138,6 +115,7 @@ const appBarClass = computed(() =>
 
 .app-bar-shell :deep(.v-toolbar__content) {
   padding-inline-start: 20px;
+  padding-inline-end: 28px;
 }
 
 .appbar-logo-icon {
@@ -165,9 +143,35 @@ const appBarClass = computed(() =>
   line-height: 1.2;
 }
 
+.user-entry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  text-decoration: none;
+  background: transparent;
+}
+
+.user-entry-avatar {
+  flex: 0 0 auto;
+}
+
+.user-entry:hover {
+  opacity: 0.92;
+}
+
+.user-entry:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
 @media (max-width: 599px) {
   .app-bar-shell :deep(.v-toolbar__content) {
     padding-inline-start: 12px;
+    padding-inline-end: 18px;
   }
 
   .appbar-logo-icon {
@@ -178,6 +182,11 @@ const appBarClass = computed(() =>
   .app-bar-subtitle {
     display: none;
   }
+
+  .user-entry {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 .layout-gallery {
@@ -185,7 +194,6 @@ const appBarClass = computed(() =>
   --gallery-text: #2e2c2a;
 }
 
-/* 画廊页：接近首页幽灵风格，透明栏 + 黑字（画廊为浅色背景） */
 .layout-gallery :deep(.app-bar-shell .v-btn),
 .layout-gallery :deep(.app-bar-shell .v-toolbar-title),
 .layout-gallery :deep(.app-bar-shell .app-bar-subtitle) {

@@ -29,11 +29,28 @@ test('authenticated users can save analysis results for artworks they do not own
     isAuthenticated: true,
     hasResult: true,
     isExistingOwned: false,
+    isSavedArtwork: false,
   })
 
   assert.equal(permissions.showSaveToGallery, true)
   assert.equal(permissions.showUpdateArtwork, false)
   assert.equal(permissions.canOpenArtworkActionDialog, true)
+})
+
+test('authenticated users cannot save persisted artworks they do not own', () => {
+  const permissions = buildArtworkActionPermissions({
+    authLoading: false,
+    isAuthenticated: true,
+    hasResult: true,
+    isExistingOwned: false,
+    isSavedArtwork: true,
+  })
+
+  assert.deepEqual(permissions, {
+    showSaveToGallery: false,
+    showUpdateArtwork: false,
+    canOpenArtworkActionDialog: false,
+  })
 })
 
 test('authenticated users can update analysis results for artworks they own', () => {
@@ -42,6 +59,7 @@ test('authenticated users can update analysis results for artworks they own', ()
     isAuthenticated: true,
     hasResult: true,
     isExistingOwned: true,
+    isSavedArtwork: true,
   })
 
   assert.equal(permissions.showSaveToGallery, false)

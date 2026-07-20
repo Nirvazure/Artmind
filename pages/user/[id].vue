@@ -58,19 +58,26 @@
           <v-divider />
           <v-window v-model="activeTab">
             <v-window-item value="analyze">
-              <v-alert type="info" variant="tonal" density="comfortable" class="ma-4 mb-0">
-                临时上传图片（temp）会在 1 天内自动删除，请及时保存到画廊。
-              </v-alert>
               <v-list v-if="analyzedArtworks.length" lines="two">
                 <v-list-item
-                  v-for="item in analyzedArtworks"
+                  v-for="item in pagedAnalyzedArtworks"
                   :key="`log-${item.id}`"
                   :title="item.title || '未命名作品'"
                   :subtitle="item.style"
                   :to="`/${item.id}?analyse=true`"
                 />
               </v-list>
-              <v-card-text v-else class="text-medium-emphasis"> 暂无分析记录 </v-card-text>
+              <v-card-text v-if="analyzedArtworks.length > analysisRecordsPerPage">
+                <v-pagination
+                  v-model="analysisRecordsPage"
+                  :length="analysisRecordsPageCount"
+                  density="comfortable"
+                  rounded="circle"
+                />
+              </v-card-text>
+              <v-card-text v-else-if="!analyzedArtworks.length" class="text-medium-emphasis">
+                暂无分析记录
+              </v-card-text>
             </v-window-item>
             <v-window-item value="gallery">
               <v-card-text>
@@ -121,6 +128,7 @@
 
 <script setup lang="ts">
 import { MasonryWall } from '@yeger/vue-masonry-wall'
+import { getPageItems } from '~/utils/analysis-helpers'
 
 definePageMeta({ layout: 'home' })
 
@@ -129,6 +137,8 @@ const auth = useAuth()
 const activeTab = ref<'analyze' | 'gallery' | 'collection'>('analyze')
 const isDesktop = ref(false)
 const columnWidth = ref(220)
+const analysisRecordsPerPage = 10
+const analysisRecordsPage = ref(1)
 
 const userId = computed(() => auth.user.value?.id)
 const {
@@ -138,6 +148,21 @@ const {
   loading: artworksLoading,
   refresh: refreshUserArtworks,
 } = useUserArtworks(userId)
+
+const analysisRecordsPageCount = computed(() =>
+  Math.max(1, Math.ceil(analyzedArtworks.value.length / analysisRecordsPerPage)),
+)
+const pagedAnalyzedArtworks = computed(() =>
+  getPageItems(analyzedArtworks.value, analysisRecordsPage.value, analysisRecordsPerPage),
+)
+
+watch(analysisRecordsPageCount, (count) => {
+  if (analysisRecordsPage.value > count) analysisRecordsPage.value = count
+})
+
+watch(analyzedArtworks, () => {
+  analysisRecordsPage.value = 1
+})
 
 function checkDesktop() {
   if (typeof window === 'undefined') return

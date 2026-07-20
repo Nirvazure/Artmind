@@ -1,7 +1,7 @@
 <template>
   <div class="profile-header" :class="[`variant-${variant}`]">
     <input ref="fileInputRef" type="file" accept="image/*" class="d-none" @change="onFileSelect" />
-    <!-- stacked: 顶栏头图 + 头像区 -->
+
     <template v-if="variant === 'stacked'">
       <div class="cover" aria-hidden="true">
         <svg class="cover-art" viewBox="0 0 400 140" preserveAspectRatio="xMidYMid slice">
@@ -45,7 +45,6 @@
           </button>
           <div class="profile-info">
             <h1 class="profile-name">{{ user?.name ?? '用户' }}</h1>
-            <div class="profile-id">ID: {{ user?.id || '—' }}</div>
           </div>
         </div>
         <div class="profile-stats">
@@ -61,10 +60,18 @@
             ><strong>{{ stats.collected ?? 0 }}</strong> 幅收藏</span
           >
         </div>
+        <v-btn
+          block
+          variant="tonal"
+          prepend-icon="mdi-logout"
+          class="logout-button stacked-logout"
+          @click="auth.logout()"
+        >
+          退出登录
+        </v-btn>
       </div>
     </template>
 
-    <!-- sidebar: 竖长侧栏 -->
     <div v-else class="sidebar-inner">
       <div class="sidebar-bg" aria-hidden="true">
         <svg viewBox="0 0 280 600" preserveAspectRatio="xMinYMid slice">
@@ -102,7 +109,6 @@
           </v-overlay>
         </button>
         <h1 class="sidebar-name">{{ user?.name ?? '用户' }}</h1>
-        <div class="sidebar-id">ID: {{ user?.id || '—' }}</div>
         <div class="sidebar-stats">
           <div class="stat-block">
             <span class="stat-num">{{ stats.analyzed }}</span>
@@ -117,6 +123,15 @@
             <span class="stat-label">我的收藏</span>
           </div>
         </div>
+        <v-btn
+          block
+          variant="tonal"
+          prepend-icon="mdi-logout"
+          class="logout-button sidebar-logout"
+          @click="auth.logout()"
+        >
+          退出登录
+        </v-btn>
       </div>
     </div>
   </div>
@@ -195,7 +210,6 @@ async function onFileSelect(e: Event) {
 </script>
 
 <style scoped>
-/* ========== stacked (移动端) ========== */
 .profile-header.variant-stacked {
   margin: -16px -16px 0;
   margin-bottom: 24px;
@@ -253,10 +267,6 @@ async function onFileSelect(e: Event) {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.profile-name-input {
-  max-width: 180px;
-}
-
 .profile-info {
   flex: 1;
   min-width: 0;
@@ -267,11 +277,6 @@ async function onFileSelect(e: Event) {
   font-weight: 600;
   margin: 0 0 4px;
   color: #2e2c2a;
-}
-
-.profile-id {
-  font-size: 0.8rem;
-  color: rgba(46, 44, 42, 0.65);
 }
 
 .profile-stats {
@@ -295,7 +300,10 @@ async function onFileSelect(e: Event) {
   margin: 0 8px;
 }
 
-/* ========== sidebar (桌面端) ========== */
+.stacked-logout {
+  margin-top: 12px;
+}
+
 .profile-header.variant-sidebar {
   margin: 0;
   height: 100%;
@@ -327,7 +335,9 @@ async function onFileSelect(e: Event) {
 .sidebar-content {
   position: relative;
   z-index: 1;
-  padding: 28px 24px;
+  padding: 28px 24px 14px;
+  height: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -345,22 +355,11 @@ async function onFileSelect(e: Event) {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.sidebar-name-edit {
-  width: 100%;
-  margin-top: 16px;
-}
-
 .sidebar-name {
   font-size: 1.35rem;
   font-weight: 600;
   margin: 16px 0 4px;
   color: #2e2c2a;
-}
-
-.sidebar-id {
-  font-size: 0.75rem;
-  color: rgba(46, 44, 42, 0.6);
-  margin-bottom: 20px;
 }
 
 .sidebar-stats {
@@ -389,5 +388,16 @@ async function onFileSelect(e: Event) {
 .stat-label {
   font-size: 0.8rem;
   color: rgba(46, 44, 42, 0.65);
+}
+
+.logout-button {
+  color: #5c5046;
+  background: rgba(92, 80, 70, 0.08);
+  border: 1px solid rgba(92, 80, 70, 0.12);
+  box-shadow: none;
+}
+
+.sidebar-logout {
+  margin-top: auto;
 }
 </style>
