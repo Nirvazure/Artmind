@@ -24,8 +24,8 @@
       </div>
     </NuxtLink>
     <div class="gallery-card-footer">
-      <NuxtLink :to="`/${artwork.id}`" class="gallery-card-title">
-        {{ artwork.title || '未命名作品' }}
+      <NuxtLink v-if="artwork.title" :to="`/${artwork.id}`" class="gallery-card-title">
+        {{ artwork.title }}
       </NuxtLink>
       <div v-if="showPublicSwitch" class="gallery-card-switch" @click.stop>
         <v-switch
@@ -162,5 +162,9 @@ async function onTogglePublic(nextValue: boolean | null) {
 .gallery-card-switch :deep(.v-label) {
   font-size: 0.78rem;
   opacity: 0.85;
+}
+
+.gallery-card-switch {
+  margin-left: auto;
 }
 </style>

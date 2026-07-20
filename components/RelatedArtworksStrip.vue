@@ -8,7 +8,7 @@
     <div class="strip-scroll">
       <NuxtLink v-for="item in items" :key="item.id" :to="`/${item.id}`" class="strip-thumb">
         <v-img :src="item.imageUrl" :alt="item.title" cover class="thumb-img" />
-        <span class="thumb-title">{{ item.title || '未命名' }}</span>
+        <span v-if="item.title" class="thumb-title">{{ item.title }}</span>
       </NuxtLink>
     </div>
   </div>

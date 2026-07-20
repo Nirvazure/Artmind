@@ -9,6 +9,7 @@ export interface ArtworkActionPermissionInput {
   isAuthenticated: boolean
   hasResult: boolean
   isExistingOwned: boolean
+  isSavedArtwork?: boolean
 }
 
 export interface ArtworkActionPermissions {
@@ -29,7 +30,7 @@ export function buildArtworkActionPermissions(
   }
 
   const showUpdateArtwork = input.isExistingOwned
-  const showSaveToGallery = !input.isExistingOwned
+  const showSaveToGallery = !input.isExistingOwned && !input.isSavedArtwork
 
   return {
     showSaveToGallery,

@@ -80,7 +80,7 @@
         rounded="lg"
         size="default"
         prepend-icon="mdi-shuffle-variant"
-        :disabled="loading || !canSwitch"
+        :disabled="pageBusy || !canSwitch"
         @click="switchToRandom"
       >
         换一张
@@ -93,7 +93,8 @@
 <script setup lang="ts">
 import VanillaTilt from 'vanilla-tilt'
 
-import { normalizeArtworkTitle } from '~/utils/analysis-helpers'
+import type { AnalysisDisplayResult } from '~/composables/useAnalysisSession'
+import { normalizeArtworkTitle, resolveAnalysisViewPhase } from '~/utils/analysis-helpers'
 import {
   buildArtworkActionPermissions,
   canSubmitArtworkAction,
@@ -114,63 +115,46 @@ const auth = useAuth()
 const toast = useToast()
 const { classifyByUrl, classifyByFile } = useClassifier()
 const analysisNotifications = useAnalysisNotifications()
+const analysisSession = useAnalysisSession()
 
-const artwork = ref<import('~/stores/artwork').Artwork | null>(null)
-const loading = ref(false)
-const error = ref('')
+const artworkLoading = ref(false)
+const pageError = ref('')
 const notFound = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
-const pendingFile = ref<File | null>(null)
-const uploadedImageUrl = ref<string | null>(null)
-const manualResult = ref<{
-  styles: { name: string; confidence: number }[]
-  painters: string[]
-  imageUrl: string
-  rawLabels?: Array<{ label: string; score: number }>
-} | null>(null)
 const title = ref('')
 const selectedStyle = ref('')
 const editablePainters = ref<string[]>([])
 const modelStyles = ref<string[]>([])
 const modelStylesLoaded = ref(false)
 const modelStylesLoading = ref(false)
-const inFlightAnalyzeKey = ref<string | null>(null)
-const savingToGallery = ref(false)
-const updatingArtwork = ref(false)
+let loadSequence = 0
 const saveDialogOpen = ref(false)
 const outputMode = ref<'polished' | 'raw'>('polished')
 
-const result = computed(() => {
-  if (pendingFile.value && !manualResult.value) return null
-  if (manualResult.value) return manualResult.value
-  if (!analyzeMode.value) return null
-  const a = artwork.value
-  if (!a?.analysisResult) return null
-  return {
-    ...a.analysisResult,
-    imageUrl: a.imageUrl,
-  }
-})
+const subject = analysisSession.subject
+const result = computed(() => analysisSession.activeResult.value)
+const error = computed(() => analysisSession.errorMessage.value || pageError.value)
 
 const displayImageSrc = computed(() => {
-  if (uploadedImageUrl.value) return uploadedImageUrl.value
-  if (manualResult.value?.imageUrl) return encodeUrl(manualResult.value.imageUrl)
-  const a = artwork.value
-  return a?.imageUrl ? encodeUrl(a.imageUrl) : ''
+  const s = subject.value
+  if (s?.type === 'local-file') return s.previewUrl
+  if (result.value?.imageUrl) return encodeUrl(result.value.imageUrl)
+  if (s?.type === 'artwork') return encodeUrl(s.artwork.imageUrl)
+  return ''
 })
 
 const viewPhase = computed<'idle' | 'analyzing' | 'resolved'>(() => {
-  if (loading.value) return 'analyzing'
-  if (result.value) return 'resolved'
-  if (analyzeMode.value && !notFound.value) return 'analyzing'
-  return 'idle'
+  return resolveAnalysisViewPhase({
+    analysisPhase: analysisSession.analysisPhase.value,
+    hasActiveResult: !!result.value,
+  })
 })
 
 const frameAspectRatio = computed(() => {
-  const a = artwork.value
+  const s = subject.value
+  const a = s?.type === 'artwork' ? s.artwork : null
   if (
-    !uploadedImageUrl.value &&
-    !manualResult.value &&
+    s?.type === 'artwork' &&
     a?.imageWidth &&
     a?.imageHeight &&
     a.imageWidth > 0 &&
@@ -182,18 +166,27 @@ const frameAspectRatio = computed(() => {
 })
 
 const canSwitch = computed(() => artworkStore.artworks.length > 1)
-const canAnalyze = computed(() => !!pendingFile.value || !!artwork.value?.imageUrl)
+const pageBusy = computed(
+  () => artworkLoading.value || analysisSession.analysisPhase.value === 'running',
+)
+const currentArtwork = computed(() =>
+  subject.value?.type === 'artwork' ? subject.value.artwork : null,
+)
+const currentLocalFile = computed(() =>
+  subject.value?.type === 'local-file' ? subject.value.file : null,
+)
+const canAnalyze = computed(() => !!currentLocalFile.value || !!currentArtwork.value?.imageUrl)
 
 const uploadPhase = computed<'idle' | 'ready' | 'analyzing' | 'resolved'>(() => {
-  if (loading.value) return 'analyzing'
+  if (analysisSession.analysisPhase.value === 'running') return 'analyzing'
   if (result.value) return 'resolved'
   if (canAnalyze.value) return 'ready'
   return 'idle'
 })
 
 const uploadFileName = computed(() => {
-  if (pendingFile.value?.name) return pendingFile.value.name
-  const titleText = artwork.value?.title?.trim()
+  if (currentLocalFile.value?.name) return currentLocalFile.value.name
+  const titleText = currentArtwork.value?.title?.trim()
   if (titleText) return titleText
   return ''
 })
@@ -201,21 +194,23 @@ const uploadFileName = computed(() => {
 const uploadBindings = computed(() => ({
   phase: uploadPhase.value,
   canAnalyze: canAnalyze.value,
-  loading: loading.value,
+  loading: analysisSession.analysisPhase.value === 'running',
   fileName: uploadFileName.value,
   previewUrl: displayImageSrc.value || undefined,
 }))
 const isExistingOwned = computed(() => {
-  const a = artwork.value
+  const a = currentArtwork.value
   const uid = auth.user.value?.id
-  return !!(a && uid && a.userId === uid && analyzeMode.value && !manualResult.value)
+  return !!(a && uid && a.userId === uid && analyzeMode.value && subject.value?.type === 'artwork')
 })
+const isSavedArtwork = computed(() => subject.value?.type === 'artwork')
 const artworkActionPermissions = computed(() =>
   buildArtworkActionPermissions({
     authLoading: auth.loading.value,
     isAuthenticated: auth.isAuthenticated.value,
     hasResult: !!result.value,
     isExistingOwned: isExistingOwned.value,
+    isSavedArtwork: isSavedArtwork.value,
   }),
 )
 const showSaveToGallery = computed(() => artworkActionPermissions.value.showSaveToGallery)
@@ -224,8 +219,13 @@ const currentArtworkAction = computed(() => resolveArtworkAction(artworkActionPe
 const canOpenArtworkActionDialog = computed(
   () => artworkActionPermissions.value.canOpenArtworkActionDialog,
 )
+const savingToGallery = computed(() => analysisSession.persistPhase.value === 'saving')
+const updatingArtwork = computed(() => analysisSession.persistPhase.value === 'updating')
 const canSaveToGallery = computed(
-  () => showSaveToGallery.value && !loading.value && !savingToGallery.value,
+  () =>
+    showSaveToGallery.value &&
+    analysisSession.analysisPhase.value !== 'running' &&
+    analysisSession.persistPhase.value !== 'saving',
 )
 const aiTopStyle = computed(() => result.value?.styles[0]?.name?.trim() ?? '')
 const styleSelectItems = computed(() => {
@@ -250,7 +250,7 @@ const styleSelectItems = computed(() => {
 function syncEditableFromResult() {
   const r = result.value
   if (!r) return
-  const a = artwork.value
+  const a = currentArtwork.value
   title.value = a ? a.title : ''
   selectedStyle.value = resolveDefaultSelectedStyle({
     action: currentArtworkAction.value,
@@ -262,9 +262,15 @@ function syncEditableFromResult() {
   ).slice(0, 3)
 }
 
+function applyResolvedArtwork(updated: import('~/stores/artwork').Artwork) {
+  artworkStore.cacheArtwork(updated)
+  analysisSession.commitSavedArtwork(updated, result.value)
+  syncEditableFromResult()
+}
+
 async function runAnalysisRequest(
-  executor: () => Promise<NonNullable<typeof manualResult.value>>,
-  options: { requestPermission: boolean; showStartNotice: boolean },
+  executor: () => Promise<AnalysisDisplayResult>,
+  options: { requestPermission: boolean; showStartNotice: boolean; isCurrent?: () => boolean },
 ) {
   if (options.showStartNotice) {
     toast.info('分析可能需要较长时间，可以切到别的标签页等待，但不要关闭或刷新当前页面。')
@@ -274,6 +280,7 @@ async function runAnalysisRequest(
 
   try {
     const res = await executor()
+    if (options.isCurrent && !options.isCurrent()) return res
     const topStyle = res.styles[0]?.name?.trim()
     const notified = await analysisNotifications.notifyIfHidden('ArtMind 分析完成', {
       body: topStyle ? `识别结果：${topStyle}` : '返回页面查看分析结果。',
@@ -284,6 +291,7 @@ async function runAnalysisRequest(
     }
     return res
   } catch (e: unknown) {
+    if (options.isCurrent && !options.isCurrent()) throw e
     const message = e instanceof Error ? e.message : '请返回页面重试'
     await analysisNotifications.notifyIfHidden('ArtMind 分析失败', {
       body: message,
@@ -336,59 +344,57 @@ async function switchToRandom() {
 }
 
 async function loadArtwork() {
-  error.value = ''
+  const sequence = ++loadSequence
+  pageError.value = ''
   notFound.value = false
+  analysisSession.cancelAnalysis()
 
   if (!id.value) {
-    error.value = '无效作品 ID'
+    pageError.value = '无效作品 ID'
     notFound.value = true
-    loading.value = false
+    artworkLoading.value = false
     return
   }
 
-  if (artwork.value?.id === id.value && artwork.value.analysisResult) {
-    loading.value = false
+  if (currentArtwork.value?.id !== id.value) {
+    analysisSession.clearResult()
+  }
+
+  if (currentArtwork.value?.id === id.value && currentArtwork.value.analysisResult) {
+    artworkLoading.value = false
     syncEditableFromResult()
     if (analyzeMode.value) await loadModelStyles()
     return
   }
 
-  manualResult.value = null
-  if (uploadedImageUrl.value) {
-    URL.revokeObjectURL(uploadedImageUrl.value)
-    uploadedImageUrl.value = null
-    pendingFile.value = null
-  }
-
   try {
-    let a = artworkStore.artworks.find((x) => x.id === id.value)
+    let a = artworkStore.cachedArtworkById(id.value) ?? undefined
     if (!a) {
-      if (analyzeMode.value) loading.value = true
-      else loading.value = false
+      artworkLoading.value = true
       a = (await artworkStore.fetchArtworkById(id.value)) ?? undefined
+      if (sequence !== loadSequence) return
     }
 
     if (!a) {
-      error.value = '作品不存在'
+      pageError.value = '作品不存在'
       notFound.value = true
-      artwork.value = null
-      loading.value = false
+      artworkLoading.value = false
       return
     }
 
-    artwork.value = a
+    analysisSession.syncRouteArtwork(a)
     syncEditableFromResult()
-    loading.value = analyzeMode.value && !a.analysisResult
+    artworkLoading.value = false
 
     if (analyzeMode.value && !a.analysisResult) {
-      const autoKey = `auto:${a.id}:${a.imageUrl}`
-      if (inFlightAnalyzeKey.value === autoKey) return
-      inFlightAnalyzeKey.value = autoKey
+      const requestId = analysisSession.beginAnalysis()
       try {
         const res = await runAnalysisRequest(() => classifyByUrl(a.imageUrl), {
           requestPermission: false,
           showStartNotice: false,
+          isCurrent: () => sequence === loadSequence && analysisSession.isCurrentRequest(requestId),
         })
+        if (sequence !== loadSequence || !analysisSession.isCurrentRequest(requestId)) return
         const uid = auth.user.value?.id
         if (uid && a.userId === uid) {
           const updated = await artworkStore.updateArtworkAnalysis(a.id, {
@@ -396,34 +402,42 @@ async function loadArtwork() {
             painters: res.painters,
             rawLabels: res.rawLabels,
           })
-          artwork.value = updated
+          if (sequence !== loadSequence || !analysisSession.isCurrentRequest(requestId)) return
+          analysisSession.resolveAnalysis(requestId, {
+            styles: res.styles,
+            painters: res.painters,
+            imageUrl: updated.imageUrl,
+            rawLabels: res.rawLabels,
+          })
+          analysisSession.setArtwork(updated, { preserveResult: true })
         } else {
-          manualResult.value = {
+          analysisSession.resolveAnalysis(requestId, {
             styles: res.styles,
             painters: res.painters,
             imageUrl: a.imageUrl,
             rawLabels: res.rawLabels,
-          }
+          })
         }
         syncEditableFromResult()
         await loadModelStyles()
-      } finally {
-        if (inFlightAnalyzeKey.value === autoKey) inFlightAnalyzeKey.value = null
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : '分析失败'
+        analysisSession.rejectAnalysis(requestId, message)
       }
     } else if (result.value) {
       await loadModelStyles()
     }
   } catch (e: unknown) {
+    if (sequence !== loadSequence) return
     const statusCode = (e as { statusCode?: number })?.statusCode
     if (statusCode === 404) {
-      error.value = '作品不存在'
+      pageError.value = '作品不存在'
       notFound.value = true
     } else {
-      error.value = e instanceof Error ? e.message : '加载失败'
+      pageError.value = e instanceof Error ? e.message : '加载失败'
     }
-    artwork.value = null
   } finally {
-    loading.value = false
+    if (sequence === loadSequence) artworkLoading.value = false
   }
 }
 
@@ -440,47 +454,36 @@ function onFileSelected(e: Event) {
 }
 
 function applyDroppedFile(file: File) {
-  if (uploadedImageUrl.value) URL.revokeObjectURL(uploadedImageUrl.value)
-  uploadedImageUrl.value = URL.createObjectURL(file)
-  pendingFile.value = file
-  manualResult.value = null
-  error.value = ''
+  const currentSubject = subject.value
+  if (currentSubject?.type === 'local-file') URL.revokeObjectURL(currentSubject.previewUrl)
+  loadSequence += 1
+  artworkLoading.value = false
+  notFound.value = false
+  pageError.value = ''
+  analysisSession.setLocalFile(file, URL.createObjectURL(file))
 }
 
 async function analyze() {
-  const baseImageUrl = artwork.value?.imageUrl
-  if (!pendingFile.value && !baseImageUrl) return
-  const analyzeKey = pendingFile.value
-    ? `file:${pendingFile.value.name}:${pendingFile.value.size}:${pendingFile.value.lastModified}`
-    : `url:${baseImageUrl as string}`
-  if (inFlightAnalyzeKey.value === analyzeKey) return
-  loading.value = true
-  error.value = ''
-  inFlightAnalyzeKey.value = analyzeKey
+  const localFile = currentLocalFile.value
+  const baseImageUrl = currentArtwork.value?.imageUrl
+  if (!localFile && !baseImageUrl) return
+  const sequence = ++loadSequence
+  const requestId = analysisSession.beginAnalysis()
   try {
     const res = await runAnalysisRequest(
-      () =>
-        pendingFile.value
-          ? classifyByFile(pendingFile.value)
-          : classifyByUrl(baseImageUrl as string),
+      () => (localFile ? classifyByFile(localFile) : classifyByUrl(baseImageUrl as string)),
       {
         requestPermission: true,
         showStartNotice: true,
+        isCurrent: () => sequence === loadSequence && analysisSession.isCurrentRequest(requestId),
       },
     )
-    manualResult.value = res
+    if (sequence !== loadSequence || !analysisSession.resolveAnalysis(requestId, res)) return
     syncEditableFromResult()
     await loadModelStyles()
-    if (pendingFile.value && res.imageUrl) {
-      if (uploadedImageUrl.value) URL.revokeObjectURL(uploadedImageUrl.value)
-      uploadedImageUrl.value = null
-      pendingFile.value = null
-    }
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : '分析失败'
-  } finally {
-    if (inFlightAnalyzeKey.value === analyzeKey) inFlightAnalyzeKey.value = null
-    loading.value = false
+    const message = e instanceof Error ? e.message : '分析失败'
+    analysisSession.rejectAnalysis(requestId, message)
   }
 }
 
@@ -492,7 +495,12 @@ async function saveToGallery(draft?: {
   if (!canSubmitArtworkAction('save', artworkActionPermissions.value)) return
   const r = result.value
   if (!r) return
-  savingToGallery.value = true
+  const resultImageUrl = r.imageUrl?.trim()
+  if (!resultImageUrl) {
+    pageError.value = '缺少图片地址，无法保存'
+    return
+  }
+  analysisSession.setPersistPhase('saving')
   try {
     const normalizedPainters = normalizePaintersInput(
       draft?.editablePainters ?? editablePainters.value,
@@ -513,33 +521,23 @@ async function saveToGallery(draft?: {
     const created = await artworkStore.addArtwork({
       title: resolvedTitle,
       style: resolvedStyle,
-      imageUrl: r.imageUrl,
+      imageUrl: resultImageUrl,
       isPublic: false,
       aiPainters: r.painters,
       analysisResult,
     })
     saveDialogOpen.value = false
-    await nextTick()
-    // Keep result continuous across the route transition: hydrate artwork + bridge
-    // via manualResult until analyse=true is on the URL, then drop the bridge.
     const hydratedAnalysis = created.analysisResult ?? analysisResult
-    artwork.value = {
+    applyResolvedArtwork({
       ...created,
       analysisResult: hydratedAnalysis,
-    }
-    manualResult.value = {
-      ...hydratedAnalysis,
-      imageUrl: created.imageUrl,
-    }
-    syncEditableFromResult()
+    })
     toast.success('已保存到你的画廊（仅自己可见）')
     await router.replace(`/${created.id}?analyse=true`)
-    manualResult.value = null
-    syncEditableFromResult()
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : '保存失败'
+    pageError.value = e instanceof Error ? e.message : '保存失败'
   } finally {
-    savingToGallery.value = false
+    analysisSession.setPersistPhase('idle')
   }
 }
 
@@ -549,10 +547,10 @@ async function updateOwnedArtwork(draft?: {
   editablePainters: string[]
 }) {
   if (!canSubmitArtworkAction('update', artworkActionPermissions.value)) return
-  const a = artwork.value
+  const a = currentArtwork.value
   const r = result.value
   if (!a || !r) return
-  updatingArtwork.value = true
+  analysisSession.setPersistPhase('updating')
   try {
     const normalizedPainters = normalizePaintersInput(
       draft?.editablePainters ?? editablePainters.value,
@@ -576,14 +574,12 @@ async function updateOwnedArtwork(draft?: {
       },
     })
     saveDialogOpen.value = false
-    await nextTick()
-    artwork.value = updated
-    syncEditableFromResult()
+    applyResolvedArtwork(updated)
     toast.success('作品已更新')
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : '更新失败'
+    pageError.value = e instanceof Error ? e.message : '更新失败'
   } finally {
-    updatingArtwork.value = false
+    analysisSession.setPersistPhase('idle')
   }
 }
 
@@ -604,7 +600,7 @@ const frameRef = ref<HTMLElement | null>(null)
 watch([id, analyzeMode], loadArtwork)
 
 onUnmounted(() => {
-  if (uploadedImageUrl.value) URL.revokeObjectURL(uploadedImageUrl.value)
+  if (subject.value?.type === 'local-file') URL.revokeObjectURL(subject.value.previewUrl)
   const tilt = (frameRef.value as (HTMLElement & { vanillaTilt?: { destroy: () => void } }) | null)
     ?.vanillaTilt
   tilt?.destroy()
