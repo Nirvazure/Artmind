@@ -178,13 +178,21 @@ function clearAll() {
   }
 
   .filter-search :deep(.v-field) {
-    min-height: 40px;
+    min-height: 38px;
   }
 }
 
 @media (max-width: 599px) {
   .filter-header {
     flex-wrap: wrap;
+  }
+
+  .filter-search {
+    max-width: none;
+  }
+
+  .filter-search :deep(.v-field) {
+    min-height: 36px;
   }
 }
 </style>

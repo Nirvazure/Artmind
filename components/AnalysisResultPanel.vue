@@ -4,7 +4,7 @@
       <div v-if="viewPhase === 'analyzing'" key="loading" class="glass-content analyzing-wrap">
         <div class="analyzing-ring">
           <div class="analyzing-portrait-wrap">
-            <v-img :src="VINCENT_LOADING_IMAGE_URL" alt="梵高" cover class="analyzing-portrait" />
+            <img :src="VINCENT_LOADING_IMAGE_URL" alt="梵高" class="analyzing-portrait" />
           </div>
         </div>
         <p class="analyzing-caption">正在掀起梵高的棺材板</p>
@@ -194,12 +194,14 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 12px 28px -16px rgba(0, 0, 0, 0.55);
-  animation: vangogh-float 3s ease-in-out infinite;
 }
 
 .analyzing-portrait {
   width: 100%;
   height: 100%;
+  display: block;
+  object-fit: cover;
+  animation: portrait-fade-in 0.28s ease both;
 }
 
 .analyzing-caption {
@@ -223,25 +225,12 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
 
 .fade-swap-enter-active,
 .fade-swap-leave-active {
-  transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+  transition: opacity 0.28s ease;
 }
 
 .fade-swap-enter-from,
 .fade-swap-leave-to {
   opacity: 0;
-  transform: translateY(6px);
-}
-
-@keyframes vangogh-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
 }
 
 @keyframes analyzing-shimmer {
@@ -250,6 +239,15 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
   }
   to {
     background-position: -200% 0;
+  }
+}
+
+@keyframes portrait-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -266,25 +264,51 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
   .analysis-panel.glass-panel {
     width: 100%;
     max-width: none;
-    padding: 18px;
+    max-height: none;
+    overflow: visible;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(246, 242, 231, 0.9);
+    color: #211d17;
+    border-color: rgba(255, 255, 255, 0.42);
+    box-shadow:
+      0 18px 38px -30px rgba(0, 0, 0, 0.58),
+      inset 0 1px 0 rgba(255, 255, 255, 0.52);
+    --ui-text: #211d17;
+    --ui-muted: rgba(33, 29, 23, 0.68);
+    --ui-divider: rgba(33, 29, 23, 0.12);
+    --confirm-surface: rgba(33, 29, 23, 0.05);
+    --confirm-border: rgba(33, 29, 23, 0.12);
+  }
+
+  .analysis-panel.glass-panel::before {
+    left: 12px;
+    right: 12px;
+    background: rgba(168, 143, 84, 0.38);
+  }
+
+  .glass-content {
+    gap: 0;
   }
 
   .analyzing-wrap {
-    min-height: 220px;
+    min-height: min(720px, calc(100dvh - 120px));
+    gap: 24px;
   }
 
   .analyzing-ring {
-    width: 156px;
-    height: 156px;
+    width: min(62vw, 232px);
+    height: min(62vw, 232px);
   }
 
   .analyzing-portrait-wrap {
-    width: 140px;
-    height: 140px;
+    width: calc(min(62vw, 232px) - 18px);
+    height: calc(min(62vw, 232px) - 18px);
   }
 
   .analyzing-caption {
-    font-size: 0.95rem;
+    max-width: 260px;
+    font-size: 1.05rem;
   }
 }
 </style>

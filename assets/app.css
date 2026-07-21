@@ -38,3 +38,17 @@ body,
     transform: translateY(0);
   }
 }
+
+@media (max-width: 599px) {
+  html,
+  body,
+  .v-application {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  .v-application::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -7,9 +7,8 @@
       clearable
       hide-details
       density="compact"
-      variant="solo-filled"
+      variant="underlined"
       flat
-      rounded="pill"
       class="search-field"
       item-title="title"
       item-value="value"
@@ -81,13 +80,34 @@ function onSelect(val: string | null) {
 }
 
 .search-field :deep(.v-field) {
-  background: var(--gallery-surface, rgba(92, 80, 70, 0.06)) !important;
-  border: 1px solid var(--gallery-border, rgba(46, 44, 42, 0.12));
+  background: transparent !important;
   font-size: 0.9rem;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.search-field :deep(.v-field__outline::before) {
+  border-color: rgba(46, 44, 42, 0.18);
+}
+
+.search-field :deep(.v-field__outline::after) {
+  border-color: var(--gallery-accent, #5c5046);
 }
 
 .search-field :deep(.v-field__overlay) {
   opacity: 0;
+}
+
+.search-field :deep(.v-field__input) {
+  min-height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.search-field :deep(.v-field__prepend-inner),
+.search-field :deep(.v-field__append-inner),
+.search-field :deep(.v-field__clearable) {
+  padding-top: 7px;
 }
 
 .search-icon {

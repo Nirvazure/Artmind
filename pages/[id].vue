@@ -19,26 +19,62 @@
       />
       <div class="page-bg-overlay" />
 
-      <main class="page-main" :class="`phase-${viewPhase}`">
+      <main class="page-main" :class="[`phase-${viewPhase}`, `mobile-view-${activeMobileView}`]">
         <div class="content-shell">
           <section class="art-stage">
-            <div ref="frameRef" class="frame-container" :style="{ aspectRatio: frameAspectRatio }">
-              <div class="frame-inner">
-                <v-img
-                  v-if="displayImageSrc"
-                  :src="displayImageSrc"
-                  contain
-                  eager
-                  class="frame-img"
-                />
-                <div v-else class="frame-skeleton" />
+            <div class="mobile-artwork-group">
+              <div
+                ref="frameRef"
+                class="frame-container"
+                :class="{ 'frame-container--empty': !displayImageSrc }"
+                :style="{ aspectRatio: frameAspectRatio }"
+              >
+                <div class="frame-inner">
+                  <v-img
+                    v-if="displayImageSrc"
+                    :src="displayImageSrc"
+                    contain
+                    eager
+                    class="frame-img"
+                  />
+                  <div v-else class="frame-skeleton">
+                    <div class="frame-empty-label">
+                      <span class="frame-empty-kicker">ArtMind</span>
+                      <span class="frame-empty-title">选择一张作品开始分析</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mobile-art-caption">
+                {{ uploadFileName || '当前作品' }}
               </div>
             </div>
-            <AnalysisUploadCommand
-              v-bind="uploadBindings"
-              @upload="triggerUpload"
-              @analyze="analyze"
-            />
+            <div class="mobile-action-flow">
+              <AnalysisUploadCommand
+                v-bind="uploadBindings"
+                @upload="triggerUpload"
+                @analyze="analyze"
+              />
+              <div class="mobile-secondary-actions">
+                <button
+                  type="button"
+                  class="mobile-secondary-action"
+                  :disabled="pageBusy"
+                  @click="triggerUpload"
+                >
+                  ↑ 更换图片
+                </button>
+                <button
+                  type="button"
+                  class="mobile-secondary-action"
+                  :disabled="pageBusy || !canSwitch"
+                  @click="switchToRandom"
+                >
+                  <v-icon icon="mdi-shuffle-variant" size="16" />
+                  换一张
+                </button>
+              </div>
+            </div>
             <v-alert v-if="error" type="error" closable density="compact" class="mt-2">
               {{ error }}
             </v-alert>
@@ -70,6 +106,14 @@
               @save-to-gallery="saveToGallery"
               @update-artwork="updateOwnedArtwork"
             />
+            <button
+              v-if="viewPhase === 'resolved'"
+              type="button"
+              class="mobile-back-to-artwork"
+              @click="showMobileArtwork"
+            >
+              返回作品
+            </button>
           </section>
         </div>
       </main>
@@ -130,6 +174,8 @@ const modelStylesLoading = ref(false)
 let loadSequence = 0
 const saveDialogOpen = ref(false)
 const outputMode = ref<'polished' | 'raw'>('polished')
+const mobileView = ref<'showcase' | 'result'>('showcase')
+const mobileSawAnalyzing = ref(false)
 
 const subject = analysisSession.subject
 const result = computed(() => analysisSession.activeResult.value)
@@ -148,6 +194,11 @@ const viewPhase = computed<'idle' | 'analyzing' | 'resolved'>(() => {
     analysisPhase: analysisSession.analysisPhase.value,
     hasActiveResult: !!result.value,
   })
+})
+const activeMobileView = computed<'showcase' | 'loading' | 'result'>(() => {
+  if (viewPhase.value === 'analyzing') return 'loading'
+  if (viewPhase.value === 'resolved') return mobileView.value
+  return 'showcase'
 })
 
 const frameAspectRatio = computed(() => {
@@ -343,6 +394,14 @@ async function switchToRandom() {
   })
 }
 
+function showMobileArtwork() {
+  mobileView.value = 'showcase'
+}
+
+function showMobileResult() {
+  if (viewPhase.value === 'resolved') mobileView.value = 'result'
+}
+
 async function loadArtwork() {
   const sequence = ++loadSequence
   pageError.value = ''
@@ -388,6 +447,7 @@ async function loadArtwork() {
 
     if (analyzeMode.value && !a.analysisResult) {
       const requestId = analysisSession.beginAnalysis()
+      mobileSawAnalyzing.value = true
       try {
         const res = await runAnalysisRequest(() => classifyByUrl(a.imageUrl), {
           requestPermission: false,
@@ -461,6 +521,7 @@ function applyDroppedFile(file: File) {
   notFound.value = false
   pageError.value = ''
   analysisSession.setLocalFile(file, URL.createObjectURL(file))
+  showMobileArtwork()
 }
 
 async function analyze() {
@@ -469,6 +530,7 @@ async function analyze() {
   if (!localFile && !baseImageUrl) return
   const sequence = ++loadSequence
   const requestId = analysisSession.beginAnalysis()
+  mobileSawAnalyzing.value = true
   try {
     const res = await runAnalysisRequest(
       () => (localFile ? classifyByFile(localFile) : classifyByUrl(baseImageUrl as string)),
@@ -598,6 +660,21 @@ onMounted(async () => {
 
 const frameRef = ref<HTMLElement | null>(null)
 watch([id, analyzeMode], loadArtwork)
+watch(id, () => {
+  showMobileArtwork()
+  mobileSawAnalyzing.value = false
+})
+watch(viewPhase, (phase) => {
+  if (phase === 'analyzing') {
+    mobileSawAnalyzing.value = true
+    return
+  }
+
+  if (phase === 'resolved' && mobileSawAnalyzing.value) {
+    showMobileResult()
+    mobileSawAnalyzing.value = false
+  }
+})
 
 onUnmounted(() => {
   if (subject.value?.type === 'local-file') URL.revokeObjectURL(subject.value.previewUrl)
@@ -689,6 +766,21 @@ onUnmounted(() => {
   width: var(--art-stage-width);
   transition: width 0.35s ease;
 }
+.mobile-artwork-group {
+  display: contents;
+}
+.mobile-action-flow {
+  width: 100%;
+}
+.mobile-art-caption {
+  display: none;
+}
+.mobile-secondary-actions {
+  display: none;
+}
+.mobile-back-to-artwork {
+  display: none;
+}
 .phase-idle .art-stage {
   align-items: center;
 }
@@ -725,6 +817,9 @@ onUnmounted(() => {
   height: 100%;
 }
 .frame-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   min-height: 240px;
@@ -738,6 +833,26 @@ onUnmounted(() => {
   background-size: 200% 100%;
   animation: skeleton-flow 1.4s linear infinite;
 }
+.frame-empty-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 20px;
+  color: rgba(244, 247, 251, 0.86);
+  text-align: center;
+  animation: hero-in 0.32s ease-out both;
+}
+.frame-empty-kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(232, 213, 163, 0.9);
+}
+.frame-empty-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
 @keyframes skeleton-flow {
   from {
     background-position: 200% 0;
@@ -746,11 +861,20 @@ onUnmounted(() => {
     background-position: -200% 0;
   }
 }
+@keyframes result-side-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .result-side {
   width: min(45%, 680px);
   min-width: 320px;
   display: flex;
   justify-content: flex-end;
+  animation: result-side-fade-in 0.26s ease both;
 }
 .switch-artwork-fab {
   position: fixed;
@@ -761,24 +885,239 @@ onUnmounted(() => {
   min-height: 44px;
 }
 @media (max-width: 599px) {
-  .page-main {
-    padding: 10px 12px 14px;
+  .page {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+    --ui-panel-bg: rgba(28, 27, 24, 0.62);
+    --ui-panel-border: rgba(255, 255, 255, 0.16);
+    --ui-divider: rgba(255, 255, 255, 0.14);
   }
+
+  .page-inner {
+    min-height: 100%;
+    height: auto;
+    overflow: visible;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .page-bg-blur,
+  .page-bg-shadow,
+  .page-bg-overlay {
+    position: fixed;
+  }
+
+  .page-main {
+    min-height: calc(100dvh - 56px);
+    padding: 0 12px calc(16px + env(safe-area-inset-bottom));
+    align-items: center;
+  }
+
   .content-shell {
     width: 100%;
+    min-height: calc(100dvh - 72px);
     flex-direction: column;
-    gap: 14px;
+    align-items: stretch;
+    justify-content: center;
+    gap: 12px;
   }
+
+  .mobile-view-showcase .result-side {
+    display: none;
+  }
+
+  .mobile-view-showcase .art-stage {
+    min-height: calc(100dvh - 72px);
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'art'
+      'actions';
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .mobile-view-loading .art-stage {
+    display: none;
+  }
+
+  .mobile-view-loading .result-side {
+    width: 100%;
+    min-width: 0;
+    min-height: calc(100dvh - 72px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: none;
+  }
+
+  .mobile-view-loading .analysis-panel.glass-panel {
+    width: 100%;
+    min-height: calc(100dvh - 96px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    animation: result-side-fade-in 0.28s ease both;
+  }
+
+  .mobile-view-loading .analysis-panel.glass-panel::before {
+    display: none;
+  }
+
+  .mobile-view-result .art-stage {
+    display: none;
+  }
+
+  .mobile-view-result .result-side {
+    width: 100%;
+    min-width: 0;
+    min-height: calc(100dvh - 72px);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    justify-content: center;
+    padding-block: 10px;
+  }
+
+  .mobile-back-to-artwork {
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: min(78%, 320px);
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #c9a962, #e8d5a3);
+    color: #1a1510;
+    box-shadow: 0 12px 24px -18px rgba(0, 0, 0, 0.54);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
   .art-stage {
     width: 100%;
+    gap: 12px;
   }
+
+  .mobile-artwork-group {
+    grid-area: art;
+    align-self: center;
+    justify-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .frame-container {
+    width: calc(100% + 24px);
+    margin-inline: -12px;
+    min-height: 50vh;
+    border-radius: 0 0 18px 18px;
+    box-shadow:
+      0 18px 34px -20px rgba(0, 0, 0, 0.68),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-art-caption {
+    display: block;
+    max-width: min(82vw, 320px);
+    color: rgba(244, 247, 251, 0.88);
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.36);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .frame-container--empty {
+    width: 100%;
+    min-height: 156px;
+    margin-inline: 0;
+    aspect-ratio: auto !important;
+    border-radius: 18px;
+  }
+
+  .frame-container--empty .frame-skeleton {
+    min-height: 156px;
+    background:
+      linear-gradient(135deg, rgba(246, 242, 231, 0.16), rgba(246, 242, 231, 0.05)),
+      radial-gradient(circle at 50% 20%, rgba(232, 213, 163, 0.18), transparent 42%);
+  }
+
+  .frame-empty-label {
+    padding: 16px;
+  }
+
+  .frame-empty-title {
+    font-size: 0.98rem;
+  }
+
+  .frame-img {
+    min-height: 50vh;
+    max-height: 58vh;
+  }
+
+  .mobile-action-flow {
+    grid-area: actions;
+    align-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 0 max(18px, env(safe-area-inset-bottom));
+  }
+
+  .mobile-secondary-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    order: 3;
+    width: 100%;
+  }
+
+  .mobile-secondary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 6px 8px;
+    border: 0;
+    background: transparent;
+    color: rgba(244, 247, 251, 0.78);
+    font: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+
+  .mobile-secondary-action:disabled {
+    opacity: 0.36;
+    cursor: not-allowed;
+  }
+
   .result-side {
     width: 100%;
     min-width: 0;
+    justify-content: stretch;
   }
+
   .switch-artwork-fab {
-    right: 16px;
-    bottom: 16px;
+    display: none;
   }
 }
 </style>

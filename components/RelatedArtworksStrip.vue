@@ -107,4 +107,39 @@ const items = computed(() =>
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+@media (max-width: 599px) {
+  .related-strip--panel {
+    padding: 14px 0;
+    border-top-color: rgba(33, 29, 23, 0.12);
+    border-bottom-color: rgba(33, 29, 23, 0.12);
+  }
+
+  .strip-heading {
+    font-weight: 700;
+    color: rgba(33, 29, 23, 0.64);
+  }
+
+  .strip-scroll {
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+
+  .strip-thumb {
+    width: 82px;
+    color: #211d17;
+  }
+
+  .thumb-img {
+    width: 82px;
+    height: 62px;
+    border-radius: 7px;
+    border-color: rgba(33, 29, 23, 0.14);
+    box-shadow: 0 8px 16px -14px rgba(0, 0, 0, 0.44);
+  }
+
+  .thumb-title {
+    color: var(--ui-muted, rgba(33, 29, 23, 0.68));
+  }
+}
 </style>
