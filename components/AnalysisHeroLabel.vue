@@ -296,6 +296,122 @@ const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
   }
 }
 
+@media (min-width: 600px) and (max-width: 1360px) {
+  .hero-label {
+    padding-bottom: 2px;
+  }
+
+  .hero-top {
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .hero-eyebrow {
+    max-width: 128px;
+    line-height: 1.45;
+  }
+
+  .hero-mode-toggle {
+    height: 32px;
+    border-radius: 9px;
+    flex-shrink: 0;
+  }
+
+  .hero-mode-toggle :deep(.v-btn) {
+    height: 32px !important;
+    padding-inline: 9px !important;
+    font-size: 0.72rem;
+  }
+
+  .hero-swap,
+  .hero-body,
+  .hero-raw {
+    min-height: 104px;
+  }
+
+  .hero-title-row {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+
+  .hero-zh {
+    font-size: clamp(1.85rem, 3.4vw, 2.45rem);
+    max-width: 100%;
+  }
+
+  .hero-en {
+    flex: 1 1 auto;
+    max-width: min(46%, 150px);
+    font-size: 0.88rem;
+  }
+
+  .hero-confidence {
+    font-size: clamp(1.28rem, 2.5vw, 1.6rem);
+  }
+
+  .hero-bar-track {
+    margin-top: 10px;
+  }
+
+  .hero-secondary {
+    margin-top: 9px;
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hero-raw-list {
+    gap: 4px;
+  }
+
+  .hero-raw-item {
+    font-size: 0.82rem;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 839px) {
+  .hero-top {
+    gap: 8px;
+  }
+
+  .hero-eyebrow {
+    max-width: 92px;
+    font-size: 0.6rem;
+  }
+
+  .hero-mode-toggle :deep(.v-btn) {
+    padding-inline: 7px !important;
+  }
+
+  .hero-mode-toggle :deep(.v-btn .v-icon) {
+    display: none;
+  }
+
+  .hero-swap,
+  .hero-body,
+  .hero-raw {
+    min-height: 92px;
+  }
+
+  .hero-zh {
+    font-size: clamp(1.7rem, 4.4vw, 2rem);
+  }
+
+  .hero-en {
+    display: none;
+  }
+
+  .hero-confidence {
+    font-size: 1.25rem;
+  }
+
+  .hero-secondary {
+    font-size: 0.72rem;
+  }
+}
+
 @media (max-width: 599px) {
   .hero-label {
     position: relative;

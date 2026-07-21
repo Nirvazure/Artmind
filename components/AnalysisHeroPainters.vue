@@ -207,6 +207,87 @@ const otherPainters = computed(() => displayPainters.value.slice(1))
   -webkit-box-orient: vertical;
 }
 
+@media (min-width: 600px) and (max-width: 1360px) {
+  .hero-painters {
+    padding: 12px 0;
+  }
+
+  .hero-painters-head {
+    margin-bottom: 10px;
+  }
+
+  .hero-painters-disclaimer {
+    display: none;
+  }
+
+  .hero-painters-row {
+    gap: 10px;
+  }
+
+  .hero-painters-primary {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .hero-painter-avatar--primary {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .hero-painter-name {
+    max-width: 120px;
+    font-size: 0.98rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hero-painter-badge {
+    padding-inline: 7px;
+    font-size: 0.58rem;
+  }
+
+  .hero-painters-divider {
+    min-height: 48px;
+  }
+
+  .hero-painters-scroll {
+    gap: 10px;
+  }
+
+  .hero-painter-item {
+    width: 48px;
+  }
+
+  .hero-painter-item :deep(.v-avatar) {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .hero-painter-item-name {
+    font-size: 0.62rem;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 839px) {
+  .hero-painters {
+    padding: 10px 0;
+  }
+
+  .hero-painters-row {
+    align-items: flex-start;
+  }
+
+  .hero-painters-others,
+  .hero-painters-divider {
+    display: none;
+  }
+
+  .hero-painter-name {
+    max-width: 142px;
+  }
+}
+
 @media (max-width: 599px) {
   .hero-painters {
     padding: 14px 0;

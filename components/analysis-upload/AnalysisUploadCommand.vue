@@ -141,6 +141,38 @@ const ctaLabel = computed(() => {
   }
 }
 
+@media (min-width: 600px) and (max-width: 1360px) {
+  .upload-command {
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .cmd-btn {
+    padding: 7px 11px;
+    font-size: 0.76rem;
+  }
+
+  .cmd-btn--primary {
+    min-width: 84px;
+  }
+
+  .cmd-center {
+    gap: 6px;
+    padding-inline: 7px;
+  }
+
+  .cmd-thumb {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .cmd-filename {
+    font-size: 0.76rem;
+    max-width: 12ch;
+  }
+}
+
 @media (max-width: 599px) {
   .upload-command {
     display: contents;
