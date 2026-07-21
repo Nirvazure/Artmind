@@ -260,6 +260,47 @@ const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/
   }
 }
 
+@media (min-width: 600px) and (max-width: 1360px) {
+  .analysis-panel.glass-panel {
+    width: 100%;
+    max-height: calc(100dvh - 152px);
+    padding: clamp(16px, 1.7vw, 20px);
+    border-radius: 18px;
+  }
+
+  .glass-content {
+    gap: 0;
+  }
+
+  .analyzing-wrap {
+    min-height: clamp(260px, 42vh, 420px);
+    gap: 16px;
+    padding: 10px 4px;
+  }
+
+  .analyzing-ring {
+    width: clamp(150px, 16vw, 180px);
+    height: clamp(150px, 16vw, 180px);
+  }
+
+  .analyzing-portrait-wrap {
+    width: calc(clamp(150px, 16vw, 180px) - 14px);
+    height: calc(clamp(150px, 16vw, 180px) - 14px);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 839px) {
+  .analysis-panel.glass-panel {
+    max-height: calc(100dvh - 136px);
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .analyzing-wrap {
+    min-height: clamp(240px, 38vh, 360px);
+  }
+}
+
 @media (max-width: 599px) {
   .analysis-panel.glass-panel {
     width: 100%;

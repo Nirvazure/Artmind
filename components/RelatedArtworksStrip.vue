@@ -108,6 +108,43 @@ const items = computed(() =>
   white-space: nowrap;
 }
 
+@media (min-width: 600px) and (max-width: 1360px) {
+  .related-strip--panel {
+    padding: 12px 0;
+  }
+
+  .strip-heading {
+    margin-bottom: 8px;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+  }
+
+  .strip-scroll {
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+
+  .strip-thumb {
+    width: 76px;
+  }
+
+  .thumb-img {
+    width: 76px;
+    height: 54px;
+    border-radius: 7px;
+  }
+
+  .related-strip--panel .thumb-title {
+    display: none;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 839px) {
+  .related-strip--panel {
+    display: none;
+  }
+}
+
 @media (max-width: 599px) {
   .related-strip--panel {
     padding: 14px 0;

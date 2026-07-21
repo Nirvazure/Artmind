@@ -884,6 +884,81 @@ onUnmounted(() => {
   min-width: 44px;
   min-height: 44px;
 }
+
+@media (min-width: 600px) and (max-width: 1360px) {
+  .page-main {
+    padding: 14px clamp(14px, 2vw, 28px) 18px;
+  }
+
+  .content-shell {
+    width: min(96vw, 1220px);
+    gap: clamp(14px, 1.8vw, 22px);
+    --analysis-side-width: clamp(320px, 31vw, 420px);
+    --art-stage-width: 100%;
+  }
+
+  .phase-analyzing .content-shell,
+  .phase-resolved .content-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--analysis-side-width);
+    justify-content: stretch;
+  }
+
+  .phase-idle .content-shell {
+    --art-stage-width: min(84vw, 980px);
+  }
+
+  .art-stage {
+    width: 100%;
+  }
+
+  .phase-analyzing .art-stage,
+  .phase-resolved .art-stage {
+    min-width: 0;
+  }
+
+  .frame-container {
+    min-height: clamp(300px, 42vh, 560px);
+    max-height: calc(100dvh - 178px);
+  }
+
+  .frame-img {
+    max-height: calc(100dvh - 178px);
+  }
+
+  .result-side {
+    width: 100%;
+    min-width: 0;
+    max-width: var(--analysis-side-width);
+    justify-content: stretch;
+  }
+
+  .switch-artwork-fab {
+    right: 18px;
+    bottom: 18px;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 839px) {
+  .page-main {
+    padding-inline: 8px;
+  }
+
+  .content-shell {
+    width: calc(100vw - 16px);
+    gap: 10px;
+    --analysis-side-width: clamp(248px, 39vw, 300px);
+  }
+
+  .frame-container {
+    min-height: clamp(280px, 40vh, 460px);
+    max-height: calc(100dvh - 164px);
+  }
+
+  .frame-img {
+    max-height: calc(100dvh - 164px);
+  }
+}
 @media (max-width: 599px) {
   .page {
     height: auto;

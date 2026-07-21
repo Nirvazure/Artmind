@@ -56,6 +56,17 @@ defineEmits<{
   letter-spacing: 0.02em;
 }
 
+@media (min-width: 600px) and (max-width: 1360px) {
+  .confirm-card {
+    padding-top: 6px;
+  }
+
+  .save-btn {
+    min-height: 38px;
+    font-size: 0.82rem;
+  }
+}
+
 @media (max-width: 599px) {
   .confirm-card {
     padding-top: 12px;
