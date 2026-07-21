@@ -208,6 +208,11 @@ const otherPainters = computed(() => displayPainters.value.slice(1))
 }
 
 @media (max-width: 599px) {
+  .hero-painters {
+    padding: 14px 0;
+    border-top-color: rgba(33, 29, 23, 0.12);
+  }
+
   .hero-painters-head {
     flex-direction: column;
     align-items: flex-start;
@@ -215,13 +220,22 @@ const otherPainters = computed(() => displayPainters.value.slice(1))
   }
 
   .hero-painters-disclaimer {
+    color: rgba(33, 29, 23, 0.55);
     text-align: left;
   }
 
   .hero-painters-row {
-    flex-direction: column;
+    flex-direction: row;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(33, 29, 23, 0.04);
+  }
+
+  .hero-painters-eyebrow {
+    font-weight: 700;
+    color: rgba(33, 29, 23, 0.64);
   }
 
   .hero-painters-divider {
@@ -229,8 +243,45 @@ const otherPainters = computed(() => displayPainters.value.slice(1))
   }
 
   .hero-painters-others {
-    padding-top: 12px;
-    border-top: 1px solid var(--ui-divider, rgba(255, 255, 255, 0.12));
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .hero-painters-primary {
+    gap: 10px;
+    min-width: 150px;
+  }
+
+  .hero-painter-avatar--primary {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .hero-painter-name {
+    font-size: 1rem;
+    color: #211d17;
+  }
+
+  .hero-painters-scroll {
+    gap: 10px;
+  }
+
+  .hero-painter-item {
+    width: 48px;
+  }
+
+  .hero-painter-avatar {
+    color: #f4f7fb;
+  }
+
+  .hero-painter-badge {
+    color: #6f5a25;
+    background: rgba(168, 143, 84, 0.14);
+    border-color: rgba(168, 143, 84, 0.28);
+  }
+
+  .hero-painter-item-name {
+    color: var(--ui-muted);
   }
 }
 </style>

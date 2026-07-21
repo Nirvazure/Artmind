@@ -45,7 +45,6 @@ const centerLabel = computed(() => {
 
 const ctaLabel = computed(() => {
   if (props.phase === 'analyzing') return '分析中'
-  if (props.phase === 'resolved') return '重新分析 →'
   return '分析 →'
 })
 </script>
@@ -144,22 +143,59 @@ const ctaLabel = computed(() => {
 
 @media (max-width: 599px) {
   .upload-command {
-    flex-wrap: wrap;
+    display: contents;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ui-text, #f4f7fb);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .cmd-center {
-    order: -1;
-    flex: 1 1 100%;
-    border: none;
-    padding: 4px 0 8px;
+    display: none;
   }
 
-  .cmd-btn--ghost {
-    flex: 1;
+  .cmd-thumb {
+    display: none;
+  }
+
+  .cmd-filename {
+    max-width: min(82vw, 320px);
+    color: rgba(244, 247, 251, 0.86);
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .cmd-btn--ghost,
+  .cmd-btn--primary {
+    width: min(78%, 320px);
+    min-height: 44px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 1rem;
   }
 
   .cmd-btn--primary {
-    flex: 1;
+    order: 2;
+    flex: 0 0 auto;
+    box-shadow: 0 12px 24px -18px rgba(0, 0, 0, 0.54);
+  }
+
+  .cmd-btn--ghost {
+    display: none;
+  }
+
+  .cmd-btn:disabled {
+    opacity: 0.62;
+  }
+
+  .cmd-btn--primary:disabled {
+    background: linear-gradient(90deg, rgba(232, 213, 163, 0.42), rgba(246, 242, 231, 0.56));
+    color: rgba(26, 21, 16, 0.44);
   }
 }
 </style>

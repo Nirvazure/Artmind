@@ -169,14 +169,50 @@ const appBarClass = computed(() =>
 }
 
 @media (max-width: 599px) {
+  .home-layout {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .home-main {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .home-main::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-main > * {
+    overflow: visible;
+  }
+
+  .app-bar-shell {
+    height: 56px !important;
+  }
+
   .app-bar-shell :deep(.v-toolbar__content) {
+    height: 56px !important;
     padding-inline-start: 12px;
-    padding-inline-end: 18px;
+    padding-inline-end: 12px;
   }
 
   .appbar-logo-icon {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .app-bar-shell :deep(.v-toolbar-title) {
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+
+  .app-bar-shell :deep(.v-btn) {
+    min-width: 0;
+    padding-inline: 10px;
   }
 
   .app-bar-subtitle {
