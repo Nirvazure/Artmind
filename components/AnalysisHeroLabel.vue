@@ -39,10 +39,12 @@
         </div>
 
         <div v-else key="raw" class="hero-raw">
-          <div class="hero-raw-list">
-            <div v-for="(r, i) in (rawLabels ?? []).slice(0, 5)" :key="i" class="hero-raw-item">
-              <span class="hero-raw-name">{{ formatKeremberkeLabel(r.label) }}</span>
-              <span class="hero-raw-score">{{ (r.score * 100).toFixed(1) }}%</span>
+          <div class="hero-raw-code">
+            <div class="hero-raw-list">
+              <div v-for="(r, i) in visibleRawLabels" :key="i" class="hero-raw-item">
+                <span class="hero-raw-name">{{ formatKeremberkeLabel(r.label) }}</span>
+                <span class="hero-raw-score">{{ Number(r.score).toFixed(3) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -102,6 +104,7 @@ const secondaryLine = computed(() => {
 })
 
 const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
+const visibleRawLabels = computed(() => (props.rawLabels ?? []).slice(0, 5))
 </script>
 
 <style scoped>
@@ -246,6 +249,14 @@ const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
   animation: hero-in 0.4s ease-out 0.12s both;
 }
 
+.hero-raw-code {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow: hidden;
+}
+
 .hero-raw-list {
   display: flex;
   flex-direction: column;
@@ -258,23 +269,29 @@ const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
+  font-family: Consolas, 'Courier New', monospace;
   font-size: 0.88rem;
   min-height: 22px;
+  min-width: 0;
 }
 
 .hero-raw-name {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: inherit;
   font-size: 0.82rem;
+  color: var(--ui-text, #f4f7fb);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1 1 auto;
+  text-align: left;
 }
 
 .hero-raw-score {
-  color: var(--ui-muted);
+  color: var(--ui-text, #f4f7fb);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .hero-view-swap-enter-active,
@@ -360,6 +377,10 @@ const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .hero-raw-code {
+    padding: 10px 12px;
   }
 
   .hero-raw-list {
@@ -461,17 +482,13 @@ const hasRawLabels = computed(() => (props.rawLabels?.length ?? 0) > 0)
     min-height: 0;
   }
 
+  .hero-raw-code {
+    background: rgba(33, 29, 23, 0.06);
+    border: 1px solid var(--ui-divider, rgba(33, 29, 23, 0.12));
+  }
+
   .hero-raw-list {
     gap: 8px;
-  }
-
-  .hero-raw-item {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--ui-divider, rgba(33, 29, 23, 0.12));
-  }
-
-  .hero-raw-item:last-child {
-    border-bottom: 0;
   }
 
   .hero-title-row {

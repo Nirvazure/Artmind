@@ -5,7 +5,18 @@
     :class="{ 'related-strip--panel': variant === 'panel' }"
   >
     <p class="strip-heading">同流派 · {{ style }}</p>
-    <div class="strip-scroll">
+    <div
+      ref="stripRef"
+      class="strip-scroll"
+      :class="{ 'is-dragging': dragging }"
+      @wheel="onWheelHorizontalScroll"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @pointerleave="onPointerUp"
+      @click.capture="onClickCapture"
+    >
       <NuxtLink v-for="item in items" :key="item.id" :to="`/${item.id}`" class="strip-thumb">
         <v-img :src="item.imageUrl" :alt="item.title" cover class="thumb-img" />
         <span v-if="item.title" class="thumb-title">{{ item.title }}</span>
@@ -36,6 +47,75 @@ const items = computed(() =>
     .filter((a) => a.id !== props.currentId && a.style === props.style)
     .slice(0, props.limit),
 )
+
+const stripRef = ref<HTMLElement | null>(null)
+const dragging = ref(false)
+const dragMoved = ref(false)
+const pointerId = ref<number | null>(null)
+const startX = ref(0)
+const startScrollLeft = ref(0)
+
+const DRAG_THRESHOLD_PX = 4
+
+function onWheelHorizontalScroll(event: WheelEvent) {
+  const strip = stripRef.value
+  if (!strip) return
+  if (strip.scrollWidth <= strip.clientWidth) return
+
+  const scrollDelta = event.deltaY || event.deltaX
+  if (scrollDelta === 0) return
+
+  event.preventDefault()
+  strip.scrollLeft += scrollDelta
+}
+
+function onPointerDown(event: PointerEvent) {
+  const strip = stripRef.value
+  if (!strip || event.button !== 0) return
+  if (strip.scrollWidth <= strip.clientWidth) return
+
+  dragging.value = true
+  dragMoved.value = false
+  pointerId.value = event.pointerId
+  startX.value = event.clientX
+  startScrollLeft.value = strip.scrollLeft
+  strip.setPointerCapture(event.pointerId)
+}
+
+function onPointerMove(event: PointerEvent) {
+  const strip = stripRef.value
+  if (!strip || !dragging.value || pointerId.value !== event.pointerId) return
+
+  const deltaX = event.clientX - startX.value
+  if (Math.abs(deltaX) > DRAG_THRESHOLD_PX) {
+    dragMoved.value = true
+  }
+  strip.scrollLeft = startScrollLeft.value - deltaX
+}
+
+function onPointerUp(event: PointerEvent) {
+  const strip = stripRef.value
+  if (!dragging.value) return
+  if (pointerId.value !== null && event.pointerId !== pointerId.value) return
+
+  if (strip && pointerId.value !== null) {
+    try {
+      strip.releasePointerCapture(pointerId.value)
+    } catch {
+      /* already released */
+    }
+  }
+
+  dragging.value = false
+  pointerId.value = null
+}
+
+function onClickCapture(event: MouseEvent) {
+  if (!dragMoved.value) return
+  event.preventDefault()
+  event.stopPropagation()
+  dragMoved.value = false
+}
 </script>
 
 <style scoped>
@@ -69,6 +149,15 @@ const items = computed(() =>
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   padding-bottom: 4px;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.strip-scroll.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
 }
 
 .strip-scroll::-webkit-scrollbar {
@@ -91,11 +180,17 @@ const items = computed(() =>
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
+  pointer-events: none;
 }
 
 .strip-thumb:hover .thumb-img {
   transform: scale(1.04);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.strip-scroll.is-dragging .strip-thumb:hover .thumb-img {
+  transform: none;
+  box-shadow: none;
 }
 
 .thumb-title {
@@ -106,6 +201,7 @@ const items = computed(() =>
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 @media (min-width: 600px) and (max-width: 1360px) {
