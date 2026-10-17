@@ -10,8 +10,8 @@
 | ------------------------ | ----------------------------------------------------------------------------------------- |
 | **首页** `/`             | 随机跳转至某件公开作品，沉浸式浏览（画作居中 + 背景模糊）                                 |
 | **作品页** `/:id`        | 浏览态展示作品；`?analyse=true` 进入分析态：上传 → AI 分类 → 修正流派/画家 → 默认私密保存 |
-| **画廊** `/gallery`      | 瀑布流展示公开作品，App Bar 支持流派/画家筛选，登录后可收藏                               |
-| **个人主页** `/user/:id` | 分析记录、我的画廊（公开 switch）、我的收藏；可编辑头像与昵称                             |
+| **画廊** `/gallery`      | 社区与收藏切换，支持流派缩略图循环筛选，统一展示作品信息与上传者头像                      |
+| **个人主页** `/user/:id` | 全宽展示个人资料，可切换分析记录与上传画作，管理作品公开性；支持编辑头像与查看收藏        |
 | **认证**                 | Supabase Auth + GitHub OAuth；保存作品、收藏、头像上传需登录                              |
 
 ### 路线图
@@ -52,12 +52,10 @@ Artmind/
 │   ├── AnalysisSaveDialog.vue     # 保存二次确认
 │   ├── GalleryArtworkCard.vue
 │   ├── GalleryArtworkGrid.vue     # 瀑布流
-│   ├── GalleryFilterPanel.vue     # 流派/画家筛选
-│   ├── GalleryPainterSearch.vue
-│   ├── GalleryStyleTileStrip.vue
+│   ├── GalleryFilterPanel.vue     # 社区/收藏切换与流派筛选标签
+│   ├── GalleryStyleRail.vue        # 流派缩略图循环导览，悬停显示流派信息
 │   ├── RelatedArtworksStrip.vue
 │   ├── ToastSnackbar.vue
-│   ├── UserGalleryCard.vue        # 个人页画廊卡片
 │   └── UserProfileHeader.vue
 ├── composables/
 │   ├── useAuth.ts                 # Supabase Auth + profiles
@@ -65,7 +63,7 @@ Artmind/
 │   ├── useUserArtworks.ts
 │   ├── useClassifier.ts
 │   └── useToast.ts
-├── layouts/home.vue               # 全局 App Bar、画廊筛选、登录入口
+├── layouts/home.vue               # 全局 App Bar、导航与登录入口
 ├── pages/
 │   ├── index.vue                  # 随机跳转 /:id
 │   ├── [id].vue                   # 作品页（浏览 + 分析）

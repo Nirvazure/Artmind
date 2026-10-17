@@ -1,33 +1,32 @@
 <template>
   <div class="filter-panel gallery-theme-light">
     <div class="filter-header">
-      <h2 class="filter-title">探索社区画廊</h2>
-      <span class="filter-count">{{ filteredCount }} 幅作品</span>
+      <v-btn-toggle
+        :model-value="onlyCollected ? 'collection' : scope === 'community' ? 'community' : null"
+        rounded="pill"
+        class="filter-scope"
+        aria-label="画廊范围"
+        @update:model-value="onScopeChange"
+      >
+        <v-btn
+          value="community"
+          rounded="pill"
+          :aria-pressed="scope === 'community' && !onlyCollected"
+        >
+          <LucideIcon name="layoutGrid" :size="17" />
+          社区
+        </v-btn>
+        <v-btn value="collection" rounded="pill" :aria-pressed="onlyCollected">
+          <LucideIcon name="bookmark" :size="17" :fill="onlyCollected ? 'currentColor' : 'none'" />
+          收藏
+        </v-btn>
+      </v-btn-toggle>
+      <span class="filter-count">{{ loading ? '加载中…' : `${filteredCount} 幅作品` }}</span>
     </div>
 
-    <div class="filter-toolbar">
-      <GalleryStyleTileStrip
-        :styles="styles"
-        :style-cover-map="styleCoverMap"
-        :selected-style="filterStyle"
-        :artwork-counts="artworkCounts"
-        @update:selected-style="onStyleChange"
-      />
-      <GalleryPainterSearch
-        class="filter-search"
-        :painters="painters"
-        :selected-painter="filterPainter"
-        @update:selected-painter="onPainterChange"
-      />
-    </div>
-
-    <div v-if="filterStyle || filterPainter" class="filter-chips">
+    <div v-if="filterStyle" class="filter-chips">
       <button v-if="filterStyle" type="button" class="filter-chip" @click="onStyleChange(null)">
         流派 · {{ filterStyle }}
-        <v-icon icon="mdi-close" size="14" />
-      </button>
-      <button v-if="filterPainter" type="button" class="filter-chip" @click="onPainterChange(null)">
-        画家 · {{ filterPainter }}
         <v-icon icon="mdi-close" size="14" />
       </button>
       <button type="button" class="filter-clear" @click="clearAll">清除筛选</button>
@@ -36,49 +35,33 @@
 </template>
 
 <script setup lang="ts">
-import type { Artwork } from '~/stores/artwork'
+import type { GalleryScope } from '~/utils/gallery-filters'
 
-interface PainterItem {
-  name: string
-  style: string
-}
-
-const props = defineProps<{
-  artworks: Artwork[]
-  styles: string[]
-  painters: PainterItem[]
-  styleCoverMap: Record<string, string>
+defineProps<{
+  scope: GalleryScope
+  onlyCollected: boolean
+  loading: boolean
   filterStyle: string | null
-  filterPainter: string | null
   filteredCount: number
 }>()
 
 const emit = defineEmits<{
+  'update:scope': [value: GalleryScope]
+  'update:onlyCollected': [value: boolean]
   'update:filterStyle': [value: string | null]
-  'update:filterPainter': [value: string | null]
 }>()
 
-const artworkCounts = computed(() => {
-  const counts: Record<string, number> = {}
-  for (const a of props.artworks) {
-    if (a.style) counts[a.style] = (counts[a.style] ?? 0) + 1
-  }
-  return counts
-})
+function onScopeChange(value: unknown) {
+  if (value === 'community') emit('update:scope', 'community')
+  else if (value === 'collection') emit('update:onlyCollected', true)
+}
 
 function onStyleChange(style: string | null) {
   emit('update:filterStyle', style)
-  if (style) emit('update:filterPainter', null)
-}
-
-function onPainterChange(painter: string | null) {
-  emit('update:filterPainter', painter)
-  if (painter) emit('update:filterStyle', null)
 }
 
 function clearAll() {
   emit('update:filterStyle', null)
-  emit('update:filterPainter', null)
 }
 </script>
 
@@ -89,34 +72,42 @@ function clearAll() {
 
 .filter-header {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  flex-wrap: wrap;
+  align-items: center;
   margin-bottom: 12px;
-  gap: 12px;
+  gap: 16px;
 }
 
-.filter-title {
-  margin: 0;
-  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
-  font-weight: 600;
-  color: var(--gallery-text);
+.filter-scope.v-btn-group {
+  height: 42px;
+  padding: 3px;
+  background: var(--gallery-surface);
+  border: 1px solid var(--gallery-border);
+}
+
+.filter-scope :deep(.v-btn) {
+  min-width: 88px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gallery-text-secondary);
+}
+
+.filter-scope :deep(.v-btn--active) {
+  background: var(--gallery-accent);
+  color: var(--gallery-accent-foreground);
+}
+
+.filter-scope :deep(.v-btn__content) {
+  gap: 7px;
 }
 
 .filter-count {
+  margin-left: auto;
   font-size: 0.88rem;
   font-variant-numeric: tabular-nums;
   color: var(--gallery-text-secondary);
   flex-shrink: 0;
-}
-
-.filter-toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.filter-search {
-  width: 100%;
+  white-space: nowrap;
 }
 
 .filter-chips {
@@ -157,42 +148,9 @@ function clearAll() {
   font-family: inherit;
 }
 
-@media (min-width: 960px) {
-  .filter-toolbar {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .filter-toolbar :deep(.style-tile-strip) {
-    flex: 0 1 690px;
-    min-width: 0;
-    max-width: 690px;
-  }
-
-  .filter-search {
-    width: 240px;
-    max-width: 240px;
-    flex: none;
-    margin-left: auto;
-  }
-
-  .filter-search :deep(.v-field) {
-    min-height: 38px;
-  }
-}
-
 @media (max-width: 599px) {
-  .filter-header {
-    flex-wrap: wrap;
-  }
-
-  .filter-search {
-    max-width: none;
-  }
-
-  .filter-search :deep(.v-field) {
-    min-height: 36px;
+  .filter-count {
+    font-size: 0.8rem;
   }
 }
 </style>

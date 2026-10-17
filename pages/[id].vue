@@ -658,7 +658,7 @@ onMounted(async () => {
   }
 })
 
-const frameRef = ref<HTMLElement | null>(null)
+const frameRef = shallowRef<HTMLElement | null>(null)
 watch([id, analyzeMode], loadArtwork)
 watch(id, () => {
   showMobileArtwork()
