@@ -1,1 +1,2 @@
-yarn lint-staged
+prettier --write .
+lint-staged

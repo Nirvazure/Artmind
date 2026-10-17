@@ -83,8 +83,6 @@ Artmind/
 │   └── 001_initial_schema.sql
 ├── types/
 │   └── database.types.ts          # Supabase 类型定义
-├── scripts/
-│   └── clear-oss-ts.mjs           # build 前清理 ali-oss 类型冲突
 └── server/
     ├── api/
     │   ├── classify.post.ts
@@ -129,13 +127,22 @@ yarn dev
 ### 构建与检查
 
 ```bash
-yarn build          # 自动执行 clear-oss-ts.mjs
+yarn build          # 生产构建
 yarn preview        # 预览生产构建
 yarn lint           # ESLint
 yarn lint:fix       # 自动修复
+yarn format         # Prettier 全项目格式化
 yarn format:check   # Prettier 检查
 yarn typecheck      # 类型检查
 ```
+
+### 提交前自动格式化
+
+项目根目录的 `.prettierrc.json` 统一规定格式，`.prettierignore` 排除依赖、构建产物、环境文件、日志及运行时数据。执行 `yarn install` 时会通过 `prepare` 脚本安装 Husky 提交钩子。
+
+每次 `git commit` 前，钩子先执行 `prettier --write .` 格式化全项目，再通过 `lint-staged` 检查并修复暂存文件。代码文件先运行 ESLint，再运行 Prettier；CSS、JSON、Markdown 和 YAML 文件运行 Prettier。任一步失败都会阻止提交。
+
+全项目格式化也会更新未暂存文件，但不会自动将它们加入提交；如需一并提交，请先手动检查并暂存。部分暂存文件仍由 `lint-staged` 保留其未暂存改动。
 
 ---
 
@@ -248,7 +255,6 @@ OSS_ACCESS_KEY_SECRET=
 **Serverless 兼容处理：**
 
 - `nitro.externals` 外置 ali-oss / debug
-- `scripts/clear-oss-ts.mjs` 构建前清理 ali-oss 类型文件
 - 画家数据内联为 `painters-list.ts`
 - HF Space 冷启动约 2–3 分钟，`maxDuration` 已设为 180s
 
