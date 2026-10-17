@@ -23,14 +23,6 @@
       </v-btn-toggle>
       <span class="filter-count">{{ loading ? '加载中…' : `${filteredCount} 幅作品` }}</span>
     </div>
-
-    <div v-if="filterStyle" class="filter-chips">
-      <button v-if="filterStyle" type="button" class="filter-chip" @click="onStyleChange(null)">
-        流派 · {{ filterStyle }}
-        <v-icon icon="mdi-close" size="14" />
-      </button>
-      <button type="button" class="filter-clear" @click="clearAll">清除筛选</button>
-    </div>
   </div>
 </template>
 
@@ -41,27 +33,17 @@ defineProps<{
   scope: GalleryScope
   onlyCollected: boolean
   loading: boolean
-  filterStyle: string | null
   filteredCount: number
 }>()
 
 const emit = defineEmits<{
   'update:scope': [value: GalleryScope]
   'update:onlyCollected': [value: boolean]
-  'update:filterStyle': [value: string | null]
 }>()
 
 function onScopeChange(value: unknown) {
   if (value === 'community') emit('update:scope', 'community')
   else if (value === 'collection') emit('update:onlyCollected', true)
-}
-
-function onStyleChange(style: string | null) {
-  emit('update:filterStyle', style)
-}
-
-function clearAll() {
-  emit('update:filterStyle', null)
 }
 </script>
 
@@ -108,44 +90,6 @@ function clearAll() {
   color: var(--gallery-text-secondary);
   flex-shrink: 0;
   white-space: nowrap;
-}
-
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--gallery-border);
-  background: transparent;
-  font-size: 0.82rem;
-  color: var(--gallery-text);
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.filter-chip:hover {
-  background: var(--gallery-surface);
-}
-
-.filter-clear {
-  background: none;
-  border: none;
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  color: var(--gallery-accent);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  font-family: inherit;
 }
 
 @media (max-width: 599px) {

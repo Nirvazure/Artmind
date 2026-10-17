@@ -7,7 +7,6 @@
           :style-cover-map="styleCoverMap"
           :selected-style="filterStore.selectedStyle"
           :artwork-counts="artworkCounts"
-          :total-count="viewArtworks.length"
           @update:selected-style="onStyleChange"
         />
       </aside>
@@ -17,11 +16,9 @@
           :scope="scope"
           :only-collected="onlyCollected"
           :loading="loading"
-          :filter-style="filterStore.selectedStyle"
           :filtered-count="filteredArtworks.length"
           @update:scope="updateGalleryFilters($event, false)"
           @update:only-collected="updateGalleryFilters($event ? 'community' : scope, $event)"
-          @update:filter-style="filterStore.selectedStyle = $event"
         />
         <div v-if="loading" class="gallery-loading">
           <v-progress-circular indeterminate color="primary" size="40" />
