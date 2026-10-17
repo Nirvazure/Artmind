@@ -33,6 +33,8 @@ export interface Artwork {
 
   createdAt: string
 
+  uploader?: { name: string; photo?: string }
+
   analysisResult?: ArtworkAnalysisResult
 }
 

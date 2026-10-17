@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prepare": "nuxt prepare && husky",
-    "build": "node scripts/clear-oss-ts.mjs && nuxt build",
+    "build": "nuxt build",
     "dev": "nuxt dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -41,9 +41,10 @@
     "vue-tsc": "^2.1.6"
   },
   "lint-staged": {
-    "*.{vue,ts,js,mjs,css,json,md}": [
-      "prettier --write",
-      "eslint --fix"
-    ]
+    "*.{vue,ts,js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,json,md,yml,yaml}": "prettier --write"
   }
 }

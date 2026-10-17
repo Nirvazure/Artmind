@@ -8,7 +8,7 @@
       </div>
       <v-spacer />
       <v-btn v-if="route.path.startsWith('/gallery')" :to="'/'" variant="text" class="text-none">
-        Home
+        Analyse
       </v-btn>
       <v-btn v-else :to="'/gallery'" variant="text" class="text-none"> Gallery </v-btn>
       <ClientOnly>
@@ -40,7 +40,11 @@
       </ClientOnly>
     </v-app-bar>
     <v-main :class="mainClass">
-      <v-container v-if="!isHome" fluid>
+      <v-container
+        v-if="!isHome"
+        fluid
+        :class="{ 'gallery-container': route.path.startsWith('/gallery') }"
+      >
         <slot />
       </v-container>
       <slot v-else />
@@ -98,6 +102,12 @@ const appBarClass = computed(() =>
 
 .default-main::-webkit-scrollbar {
   display: none;
+}
+
+@media (min-width: 960px) {
+  .gallery-container {
+    padding-inline: 0;
+  }
 }
 
 .app-bar-shell {

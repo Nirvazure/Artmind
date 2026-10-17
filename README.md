@@ -10,8 +10,8 @@
 | ------------------------ | ----------------------------------------------------------------------------------------- |
 | **首页** `/`             | 随机跳转至某件公开作品，沉浸式浏览（画作居中 + 背景模糊）                                 |
 | **作品页** `/:id`        | 浏览态展示作品；`?analyse=true` 进入分析态：上传 → AI 分类 → 修正流派/画家 → 默认私密保存 |
-| **画廊** `/gallery`      | 瀑布流展示公开作品，App Bar 支持流派/画家筛选，登录后可收藏                               |
-| **个人主页** `/user/:id` | 分析记录、我的画廊（公开 switch）、我的收藏；可编辑头像与昵称                             |
+| **画廊** `/gallery`      | 社区与收藏切换，支持流派缩略图循环筛选，统一展示作品信息与上传者头像                      |
+| **个人主页** `/user/:id` | 全宽展示个人资料，可切换分析记录与上传画作，管理作品公开性；支持编辑头像与查看收藏        |
 | **认证**                 | Supabase Auth + GitHub OAuth；保存作品、收藏、头像上传需登录                              |
 
 ### 路线图
@@ -52,12 +52,10 @@ Artmind/
 │   ├── AnalysisSaveDialog.vue     # 保存二次确认
 │   ├── GalleryArtworkCard.vue
 │   ├── GalleryArtworkGrid.vue     # 瀑布流
-│   ├── GalleryFilterPanel.vue     # 流派/画家筛选
-│   ├── GalleryPainterSearch.vue
-│   ├── GalleryStyleTileStrip.vue
+│   ├── GalleryFilterPanel.vue     # 社区/收藏切换与流派筛选标签
+│   ├── GalleryStyleRail.vue        # 流派缩略图循环导览，悬停显示流派信息
 │   ├── RelatedArtworksStrip.vue
 │   ├── ToastSnackbar.vue
-│   ├── UserGalleryCard.vue        # 个人页画廊卡片
 │   └── UserProfileHeader.vue
 ├── composables/
 │   ├── useAuth.ts                 # Supabase Auth + profiles
@@ -65,7 +63,7 @@ Artmind/
 │   ├── useUserArtworks.ts
 │   ├── useClassifier.ts
 │   └── useToast.ts
-├── layouts/home.vue               # 全局 App Bar、画廊筛选、登录入口
+├── layouts/home.vue               # 全局 App Bar、导航与登录入口
 ├── pages/
 │   ├── index.vue                  # 随机跳转 /:id
 │   ├── [id].vue                   # 作品页（浏览 + 分析）
@@ -83,8 +81,6 @@ Artmind/
 │   └── 001_initial_schema.sql
 ├── types/
 │   └── database.types.ts          # Supabase 类型定义
-├── scripts/
-│   └── clear-oss-ts.mjs           # build 前清理 ali-oss 类型冲突
 └── server/
     ├── api/
     │   ├── classify.post.ts
@@ -129,13 +125,22 @@ yarn dev
 ### 构建与检查
 
 ```bash
-yarn build          # 自动执行 clear-oss-ts.mjs
+yarn build          # 生产构建
 yarn preview        # 预览生产构建
 yarn lint           # ESLint
 yarn lint:fix       # 自动修复
+yarn format         # Prettier 全项目格式化
 yarn format:check   # Prettier 检查
 yarn typecheck      # 类型检查
 ```
+
+### 提交前自动格式化
+
+项目根目录的 `.prettierrc.json` 统一规定格式，`.prettierignore` 排除依赖、构建产物、环境文件、日志及运行时数据。执行 `yarn install` 时会通过 `prepare` 脚本安装 Husky 提交钩子。
+
+每次 `git commit` 前，钩子先执行 `prettier --write .` 格式化全项目，再通过 `lint-staged` 检查并修复暂存文件。代码文件先运行 ESLint，再运行 Prettier；CSS、JSON、Markdown 和 YAML 文件运行 Prettier。任一步失败都会阻止提交。
+
+全项目格式化也会更新未暂存文件，但不会自动将它们加入提交；如需一并提交，请先手动检查并暂存。部分暂存文件仍由 `lint-staged` 保留其未暂存改动。
 
 ---
 
@@ -248,7 +253,6 @@ OSS_ACCESS_KEY_SECRET=
 **Serverless 兼容处理：**
 
 - `nitro.externals` 外置 ali-oss / debug
-- `scripts/clear-oss-ts.mjs` 构建前清理 ali-oss 类型文件
 - 画家数据内联为 `painters-list.ts`
 - HF Space 冷启动约 2–3 分钟，`maxDuration` 已设为 180s
 

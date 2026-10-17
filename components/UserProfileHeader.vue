@@ -52,13 +52,21 @@
             ><strong>{{ stats.analyzed }}</strong> 条分析</span
           >
           <span class="stat-divider">|</span>
-          <span class="stat-item"
-            ><strong>{{ stats.gallery }}</strong> 幅画廊</span
+          <NuxtLink
+            :to="{ path: `/user/${user?.id}`, query: { view: 'uploads' } }"
+            class="stat-item stat-link"
+            aria-label="查看我上传的画作"
           >
+            <strong>{{ stats.gallery }}</strong> 幅上传
+          </NuxtLink>
           <span class="stat-divider">|</span>
-          <span class="stat-item"
-            ><strong>{{ stats.collected ?? 0 }}</strong> 幅收藏</span
+          <NuxtLink
+            to="/gallery?collected=true"
+            class="stat-item stat-link"
+            aria-label="查看我的收藏"
           >
+            <strong>{{ stats.collected ?? 0 }}</strong> 幅收藏
+          </NuxtLink>
         </div>
         <v-btn
           block
@@ -114,14 +122,22 @@
             <span class="stat-num">{{ stats.analyzed }}</span>
             <span class="stat-label">分析记录</span>
           </div>
-          <div class="stat-block">
+          <NuxtLink
+            :to="{ path: `/user/${user?.id}`, query: { view: 'uploads' } }"
+            class="stat-block stat-link"
+            aria-label="查看我上传的画作"
+          >
             <span class="stat-num">{{ stats.gallery }}</span>
-            <span class="stat-label">画廊作品</span>
-          </div>
-          <div class="stat-block">
+            <span class="stat-label">上传画作</span>
+          </NuxtLink>
+          <NuxtLink
+            to="/gallery?collected=true"
+            class="stat-block stat-link"
+            aria-label="查看我的收藏"
+          >
             <span class="stat-num">{{ stats.collected ?? 0 }}</span>
             <span class="stat-label">我的收藏</span>
-          </div>
+          </NuxtLink>
         </div>
         <v-btn
           block
@@ -293,6 +309,30 @@ async function onFileSelect(e: Event) {
 .stat-item strong {
   color: #5c5046;
   font-weight: 600;
+}
+
+.stat-link {
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.stat-item.stat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.stat-link:hover {
+  background: rgba(92, 80, 70, 0.08);
+}
+
+.stat-link:focus-visible {
+  outline: 2px solid #5c5046;
+  outline-offset: 3px;
 }
 
 .stat-divider {

@@ -658,7 +658,7 @@ onMounted(async () => {
   }
 })
 
-const frameRef = ref<HTMLElement | null>(null)
+const frameRef = shallowRef<HTMLElement | null>(null)
 watch([id, analyzeMode], loadArtwork)
 watch(id, () => {
   showMobileArtwork()
@@ -1004,6 +1004,7 @@ onUnmounted(() => {
   .mobile-view-showcase .art-stage {
     min-height: calc(100dvh - 72px);
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas:
       'art'
@@ -1085,6 +1086,7 @@ onUnmounted(() => {
 
   .mobile-artwork-group {
     grid-area: art;
+    min-width: 0;
     align-self: center;
     justify-self: center;
     display: flex;
@@ -1147,6 +1149,7 @@ onUnmounted(() => {
 
   .mobile-action-flow {
     grid-area: actions;
+    min-width: 0;
     align-self: end;
     display: flex;
     flex-direction: column;

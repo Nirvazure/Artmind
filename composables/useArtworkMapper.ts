@@ -1,6 +1,6 @@
 import type { Artwork, ArtworkAnalysisResult } from '~/stores/artwork'
 
-interface ArtworkRow {
+export interface ArtworkRow {
   id: string
   user_id: string
   title: string
@@ -12,6 +12,7 @@ interface ArtworkRow {
   analysis_result: ArtworkAnalysisResult | null
   created_at: string
   artwork_likes?: { user_id: string }[]
+  uploader?: { display_name: string | null; avatar_url: string | null } | null
 }
 
 export function mapArtworkRow(row: ArtworkRow): Artwork {
@@ -27,8 +28,15 @@ export function mapArtworkRow(row: ArtworkRow): Artwork {
     likes: (row.artwork_likes ?? []).map((l) => l.user_id),
     comments: [],
     createdAt: row.created_at,
+    uploader: row.uploader
+      ? {
+          name: row.uploader.display_name?.trim() || '上传者',
+          photo: row.uploader.avatar_url ?? undefined,
+        }
+      : undefined,
     analysisResult: row.analysis_result ?? undefined,
   }
 }
 
-export const artworkSelectQuery = '*, artwork_likes(user_id)'
+export const artworkSelectQuery =
+  '*, artwork_likes(user_id), uploader:profiles!artworks_user_id_fkey(display_name, avatar_url)'

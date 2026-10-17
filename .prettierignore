@@ -1,8 +1,17 @@
 node_modules
 .nuxt
 .output
+.vercel
 dist
 coverage
 .cursor
+.specstory
+.env
+.env.*
+*.log
 *.lock
 artmind.artworks.json
+server/data/artworks.json
+server/python/data
+server/python/**/__pycache__
+*.ckpt
