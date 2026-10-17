@@ -17,6 +17,10 @@ export const lucideIcons = {
   ],
   chevronUp: [['path', { d: 'm18 15-6-6-6 6' }]],
   chevronDown: [['path', { d: 'm6 9 6 6 6-6' }]],
+  x: [
+    ['path', { d: 'M18 6 6 18' }],
+    ['path', { d: 'm6 6 12 12' }],
+  ],
   layoutGrid: [
     [
       'rect',

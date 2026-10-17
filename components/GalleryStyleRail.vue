@@ -24,32 +24,47 @@
         :data-cycle="cycle"
         :aria-hidden="cycle !== 1 ? true : undefined"
       >
-        <button
-          v-for="(style, index) in options"
-          :key="style ?? 'all'"
-          type="button"
-          class="rail-item"
-          :class="{ 'is-active': selectedStyle === style }"
-          :tabindex="cycle === 1 ? 0 : -1"
-          :data-index="index"
-          :aria-pressed="selectedStyle === style"
-          :aria-label="`${style ?? '全部流派'} · ${count(style)} 幅作品`"
-          @mousedown="cycle !== 1 && $event.preventDefault()"
-          @click="select(style, index, cycle)"
-          @focus="cycle === 1 && reveal($event.target as HTMLElement)"
-        >
-          <span class="rail-cover">
-            <v-img v-if="style && styleCoverMap[style]" :src="styleCoverMap[style]" alt="" cover />
-          </span>
-          <span class="rail-count" aria-hidden="true">{{ count(style) }}</span>
-          <span v-if="selectedStyle === style" class="rail-selected" aria-hidden="true" />
-          <v-tooltip activator="parent" :location="vertical ? 'right' : 'bottom'" :open-delay="100">
-            <span class="rail-tooltip">
-              <strong>{{ style ?? '全部流派' }}</strong>
-              <span>{{ count(style) }} 幅作品</span>
+        <div v-for="(style, index) in options" :key="style" class="rail-tile">
+          <button
+            type="button"
+            class="rail-item"
+            :class="{ 'is-active': selectedStyle === style }"
+            :tabindex="cycle === 1 ? 0 : -1"
+            :data-index="index"
+            :aria-pressed="selectedStyle === style"
+            :aria-label="`${style} · ${count(style)} 幅作品`"
+            @mousedown="cycle !== 1 && $event.preventDefault()"
+            @click="select(style, index, cycle)"
+            @focus="cycle === 1 && reveal($event.target as HTMLElement)"
+          >
+            <span class="rail-cover">
+              <v-img v-if="styleCoverMap[style]" :src="styleCoverMap[style]" alt="" cover />
             </span>
-          </v-tooltip>
-        </button>
+            <span class="rail-count" aria-hidden="true">{{ count(style) }}</span>
+            <v-tooltip
+              activator="parent"
+              :location="vertical ? 'right' : 'bottom'"
+              :open-delay="100"
+            >
+              <span class="rail-tooltip">
+                <strong>{{ style }}</strong>
+                <span>{{ count(style) }} 幅作品</span>
+              </span>
+            </v-tooltip>
+          </button>
+          <button
+            v-if="selectedStyle === style"
+            type="button"
+            class="rail-clear"
+            :tabindex="cycle === 1 ? 0 : -1"
+            :data-index="index"
+            :aria-label="`取消${style}筛选`"
+            @mousedown="cycle !== 1 && $event.preventDefault()"
+            @click.stop="clearSelection(index)"
+          >
+            <LucideIcon name="x" :size="12" />
+          </button>
+        </div>
       </div>
     </div>
     <button
@@ -72,21 +87,20 @@ const props = defineProps<{
   styleCoverMap: Record<string, string>
   selectedStyle: string | null
   artworkCounts: Record<string, number>
-  totalCount: number
 }>()
 
 const emit = defineEmits<{
   'update:selectedStyle': [value: string | null]
 }>()
 
-const options = computed<Array<string | null>>(() => [null, ...new Set(props.styles)])
+const options = computed(() => [...new Set(props.styles)])
 const listRef = shallowRef<HTMLElement | null>(null)
 const vertical = ref(true)
 let cycleSize = 0
 let animationFrame = 0
 
-function count(style: string | null) {
-  return style ? (props.artworkCounts[style] ?? 0) : props.totalCount
+function count(style: string) {
+  return props.artworkCounts[style] ?? 0
 }
 
 function offset() {
@@ -174,9 +188,14 @@ function middleButtons() {
   )
 }
 
-function select(style: string | null, index: number, cycle: number) {
+function select(style: string, index: number, cycle: number) {
   emit('update:selectedStyle', style)
   if (cycle !== 1) middleButtons()[index]?.focus({ preventScroll: true })
+}
+
+function clearSelection(index: number) {
+  middleButtons()[index]?.focus({ preventScroll: true })
+  emit('update:selectedStyle', null)
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -288,11 +307,17 @@ watch(options, resetLoop, { flush: 'post' })
   padding-right: var(--rail-gap);
 }
 
-.rail-item {
+.rail-tile {
   position: relative;
   flex: 0 0 var(--rail-size);
   width: var(--rail-size);
   height: var(--rail-size);
+}
+
+.rail-item {
+  position: relative;
+  width: 100%;
+  height: 100%;
   padding: 3px;
   border: 2px solid transparent;
   border-radius: 16px;
@@ -311,7 +336,8 @@ watch(options, resetLoop, { flush: 'post' })
 }
 
 .rail-step:focus-visible,
-.rail-item:focus-visible {
+.rail-item:focus-visible,
+.rail-clear:focus-visible {
   outline: 2px solid var(--gallery-accent);
   outline-offset: -2px;
 }
@@ -343,26 +369,38 @@ watch(options, resetLoop, { flush: 'post' })
   display: grid;
   place-items: center;
   color: #fff;
+  font-family: 'Segoe UI', Arial, sans-serif;
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1.2;
   text-align: center;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: lining-nums tabular-nums;
   text-shadow:
     0 1px 3px rgb(0 0 0 / 55%),
     0 0 8px rgb(0 0 0 / 25%);
   pointer-events: none;
 }
 
-.rail-selected {
+.rail-clear {
   position: absolute;
+  top: 0;
   right: 0;
-  bottom: 0;
-  width: 10px;
-  height: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   border: 2px solid var(--gallery-bg);
   border-radius: 50%;
+  color: var(--gallery-accent-foreground);
   background: var(--gallery-accent);
+  cursor: pointer;
+}
+
+.rail-clear:hover {
+  color: var(--gallery-bg);
+  background: var(--gallery-text);
 }
 
 .rail-tooltip {
