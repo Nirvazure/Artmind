@@ -31,23 +31,17 @@ export function useAuth() {
     return data.session?.access_token ?? null
   }
 
-  function setPhoto(url: string) {
-    if (user.value) user.value = { ...user.value, photo: url }
-  }
-
   function setName(name: string) {
     if (user.value) user.value = { ...user.value, name }
   }
 
-  async function updateProfile(updates: { photo?: string; nickname?: string }) {
+  async function updateProfile(updates: { nickname?: string }) {
     if (!user.value?.id) throw new Error('请先登录')
-    const row: { avatar_url?: string; display_name?: string } = {}
-    if (updates.photo !== undefined) row.avatar_url = updates.photo
+    const row: { display_name?: string } = {}
     if (updates.nickname !== undefined) row.display_name = updates.nickname
     const { error } = await supabase.from('profiles').update(row).eq('id', user.value.id)
     if (error) throw error
     if (updates.nickname !== undefined) setName(updates.nickname)
-    if (updates.photo !== undefined) setPhoto(updates.photo)
   }
 
   return {
@@ -58,7 +52,6 @@ export function useAuth() {
     logout,
     getAccessToken,
     updateProfile,
-    setPhoto,
     setName,
   }
 }

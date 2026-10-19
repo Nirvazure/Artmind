@@ -1,7 +1,5 @@
 <template>
   <div class="profile-header" :class="[`variant-${variant}`]">
-    <input ref="fileInputRef" type="file" accept="image/*" class="d-none" @change="onFileSelect" />
-
     <template v-if="variant === 'stacked'">
       <div class="cover" aria-hidden="true">
         <svg class="cover-art" viewBox="0 0 400 140" preserveAspectRatio="xMidYMid slice">
@@ -23,26 +21,12 @@
       </div>
       <div class="profile-body stacked-body">
         <div class="profile-main">
-          <button
-            type="button"
-            class="avatar-clickable avatar-wrap"
-            :disabled="uploadingAvatar"
-            @click="fileInputRef?.click()"
-          >
+          <div class="avatar-wrap">
             <v-avatar size="72" class="profile-avatar" elevation="2">
               <v-img v-if="user?.photo" :src="user.photo" cover />
               <span v-else class="text-h5">{{ (user?.name || 'U').charAt(0) }}</span>
             </v-avatar>
-            <v-overlay
-              :model-value="uploadingAvatar"
-              contained
-              scrim="rgba(255,255,255,0.7)"
-              class="align-center justify-center"
-              persistent
-            >
-              <v-progress-circular indeterminate size="32" />
-            </v-overlay>
-          </button>
+          </div>
           <div class="profile-info">
             <h1 class="profile-name">{{ user?.name ?? '用户' }}</h1>
           </div>
@@ -96,26 +80,12 @@
         </svg>
       </div>
       <div class="sidebar-content">
-        <button
-          type="button"
-          class="avatar-clickable sidebar-avatar-wrap"
-          :disabled="uploadingAvatar"
-          @click="fileInputRef?.click()"
-        >
+        <div class="sidebar-avatar-wrap">
           <v-avatar size="96" class="sidebar-avatar" elevation="4">
             <v-img v-if="user?.photo" :src="user.photo" cover />
             <span v-else class="text-h4">{{ (user?.name || 'U').charAt(0) }}</span>
           </v-avatar>
-          <v-overlay
-            :model-value="uploadingAvatar"
-            contained
-            scrim="rgba(255,255,255,0.7)"
-            class="align-center justify-center"
-            persistent
-          >
-            <v-progress-circular indeterminate size="40" />
-          </v-overlay>
-        </button>
+        </div>
         <h1 class="sidebar-name">{{ user?.name ?? '用户' }}</h1>
         <div class="sidebar-stats">
           <div class="stat-block">
@@ -160,69 +130,7 @@ defineProps<{
   variant: 'stacked' | 'sidebar'
 }>()
 
-const emit = defineEmits<{
-  'avatar-success': [url: string]
-}>()
-
 const auth = useAuth()
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const uploadingAvatar = ref(false)
-
-function resizeImageToSquare(file: File, maxSize = 512): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      const cropSize = Math.min(img.width, img.height)
-      const sx = (img.width - cropSize) / 2
-      const sy = (img.height - cropSize) / 2
-      const outSize = Math.min(cropSize, maxSize)
-      const canvas = document.createElement('canvas')
-      canvas.width = outSize
-      canvas.height = outSize
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        reject(new Error('Canvas not supported'))
-        return
-      }
-      ctx.drawImage(img, sx, sy, cropSize, cropSize, 0, 0, outSize, outSize)
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.9)
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('Image load failed'))
-    }
-    img.src = url
-  })
-}
-
-async function onFileSelect(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file || !file.type.startsWith('image/')) return
-  input.value = ''
-  uploadingAvatar.value = true
-  try {
-    const blob = await resizeImageToSquare(file)
-    const token = await auth.getAccessToken()
-    if (!token) throw new Error('请先登录')
-    const formData = new FormData()
-    formData.append('file', blob, 'avatar.jpg')
-    const { url } = await $fetch<{ url: string }>('/api/avatar', {
-      method: 'POST',
-      body: formData,
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    useToast().success('头像已更新')
-    emit('avatar-success', url)
-  } catch (err) {
-    const msg = (err as Error)?.message ?? '上传失败'
-    useToast().error(msg)
-  } finally {
-    uploadingAvatar.value = false
-  }
-}
 </script>
 
 <style scoped>
@@ -262,19 +170,6 @@ async function onFileSelect(e: Event) {
   align-items: flex-start;
   gap: 20px;
   flex-wrap: wrap;
-}
-
-.avatar-clickable {
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  border-radius: 50%;
-  position: relative;
-}
-
-.avatar-clickable:hover {
-  opacity: 0.9;
 }
 
 .profile-avatar {

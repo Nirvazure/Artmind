@@ -4,6 +4,7 @@ node_modules
 .vercel
 dist
 .env
+.storage-migration/
 *.log
 .DS_Store
 .specstory

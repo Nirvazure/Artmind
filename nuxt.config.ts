@@ -14,11 +14,6 @@ export default defineNuxtConfig({
     alias: {
       cookie: 'cookie-es',
     },
-    // ali-oss 打包后会触发 debug 依赖的 ESM/CJS 兼容问题，改走 nitro externals 追踪依赖
-    externals: {
-      inline: ['lodash'],
-      external: ['ali-oss', 'debug'],
-    },
   },
   app: {
     head: {
@@ -36,10 +31,6 @@ export default defineNuxtConfig({
   css: ['~/assets/app.css'],
   runtimeConfig: {
     supabaseServiceRoleKey: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
-    ossRegion: (process.env.OSS_REGION || '').trim(),
-    ossBucket: (process.env.OSS_BUCKET || '').trim(),
-    ossAccessKeyId: (process.env.OSS_ACCESS_KEY_ID || '').trim(),
-    ossAccessKeySecret: (process.env.OSS_ACCESS_KEY_SECRET || '').trim(),
     paintingInferenceUrl: (
       process.env.PAINTING_INFERENCE_URL ||
       process.env.NUXT_PAINTING_INFERENCE_URL ||

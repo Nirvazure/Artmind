@@ -11,14 +11,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "nuxt preview",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "test": "node --experimental-strip-types --loader ./tests/ts-extension-loader.mjs --test tests/*.test.ts",
+    "storage:cleanup": "node --experimental-strip-types scripts/cleanup-storage.ts"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.4",
     "@supabase/supabase-js": "^2.106.0",
     "@vueuse/motion": "^3.0.3",
     "@yeger/vue-masonry-wall": "^6.1.0",
-    "ali-oss": "^6.20.0",
     "cookie-es": "^3.1.1",
     "nuxt": "^3.14.0",
     "pinia": "^2.2.4",

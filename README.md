@@ -11,8 +11,8 @@
 | **首页** `/`             | 随机跳转至某件公开作品，沉浸式浏览（画作居中 + 背景模糊）                                 |
 | **作品页** `/:id`        | 浏览态展示作品；`?analyse=true` 进入分析态：上传 → AI 分类 → 修正流派/画家 → 默认私密保存 |
 | **画廊** `/gallery`      | 社区与收藏切换，支持流派缩略图循环筛选，统一展示作品信息与上传者头像                      |
-| **个人主页** `/user/:id` | 全宽展示个人资料，可切换分析记录与上传画作，管理作品公开性；支持编辑头像与查看收藏        |
-| **认证**                 | Supabase Auth + GitHub OAuth；保存作品、收藏、头像上传需登录                              |
+| **个人主页** `/user/:id` | 全宽展示个人资料，可切换分析记录与上传画作，管理作品公开性；使用 GitHub 头像并查看收藏    |
+| **认证**                 | Supabase Auth + GitHub OAuth；保存作品、收藏需登录                                        |
 
 ### 路线图
 
@@ -28,9 +28,9 @@
 | ---------- | ----------------------------------------------------------- |
 | 前端       | Vue 3、Nuxt 3、Vuetify 3、Pinia、@vueuse/motion             |
 | UI         | @yeger/vue-masonry-wall（瀑布流）、vanilla-tilt（卡片动效） |
-| 后端       | Nitro（AI 分类、图片压缩、OSS 写入）                        |
+| 后端       | Nitro（AI 分类、图片压缩、Storage 写入）                    |
 | 认证与数据 | YQYHub Supabase Auth + `artmind` schema Postgres（RLS）     |
-| 图片存储   | 阿里云 OSS（temp / artworks / avatars）                     |
+| 图片存储   | Supabase Storage，公开桶 `Artmind`（temp / artworks）       |
 | 图片处理   | sharp（上传压缩、尺寸读取）                                 |
 | AI         | Hugging Face Space（keremberke 艺术流派分类，27 类）        |
 | 部署       | Vercel（`maxDuration: 180s`）                               |
@@ -85,7 +85,6 @@ Artmind/
     ├── api/
     │   ├── classify.post.ts
     │   ├── upload.post.ts
-    │   ├── avatar.post.ts
     │   ├── artworks/
     │   │   ├── index.post.ts      # 保存作品（temp → artworks）
     │   │   └── [id]/analysis.put.ts
@@ -109,7 +108,7 @@ Artmind/
 
 ### 环境要求
 
-- Node.js 18+
+- Node.js 22.18+（推荐 24；维护脚本及测试直接运行 TypeScript）
 - Yarn
 
 ### 安装与开发
@@ -132,6 +131,8 @@ yarn lint:fix       # 自动修复
 yarn format         # Prettier 全项目格式化
 yarn format:check   # Prettier 检查
 yarn typecheck      # 类型检查
+yarn test           # Node 单元测试
+yarn storage:cleanup # 临时文件清理预览（不会删除）
 ```
 
 ### 提交前自动格式化
@@ -174,11 +175,6 @@ SUPABASE_URL=https://tfvzcuksahcofooqqezx.supabase.co
 SUPABASE_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# 阿里云 OSS（必填）
-OSS_REGION=oss-cn-hangzhou
-OSS_BUCKET=your-bucket
-OSS_ACCESS_KEY_ID=
-OSS_ACCESS_KEY_SECRET=
 ```
 
 也支持 `NUXT_PUBLIC_SUPABASE_*`、`NUXT_PAINTING_INFERENCE_URL` 等 Nuxt 前缀别名，详见 `nuxt.config.ts`。
@@ -197,19 +193,22 @@ OSS_ACCESS_KEY_SECRET=
 | `uploads`       | 上传流水（temp 路径、过期时间）            |
 | `analysis_logs` | 分析流水                                   |
 
-画廊列表、收藏、资料更新由**客户端直连 Supabase**（RLS 保护）。Nitro 负责 classify / upload / avatar / 保存作品 / 更新分析结果。
+画廊列表、收藏、资料更新由**客户端直连 Supabase**（RLS 保护）。Nitro 负责 classify / upload / 保存作品 / 更新分析结果。头像使用 GitHub 提供的 HTTPS 地址，`profiles.avatar_url` 作为社区、收藏及他人主页的展示缓存；不再提供头像文件上传。
 
-### 阿里云 OSS
+### Supabase Storage
 
 ```
-{BUCKET}/
+Artmind/
 ├── temp/       # 临时文件（未保存到画廊）
 ├── artworks/   # 持久化作品
-└── avatars/    # 用户头像
+└── vincent.jpg # 分析加载图
 ```
 
-- **temp/** 需在 OSS 控制台配置生命周期：前缀 `temp/`，1 天过期
-- 上传经 sharp 压缩至 1MB 以内（失败则原样存储）
+- 沿用现有 Supabase 项目，桶名严格为 `Artmind`，设为公开。图片链接可公开访问，作品列表继续由数据库 RLS 控制。
+- 上传通过 Nitro，服务端管理密钥不发给浏览器；检查共享项目的 Storage 策略，确保客户端无本桶写入权限。可在 SQL Editor 执行 [`003_storage_write_guard.sql`](supabase/migrations/003_storage_write_guard.sql)。
+- 保存作品时从 `temp/` 复制到 `artworks/`，保留原临时对象。上传尝试压缩到 1MB；压缩失败时保留原文件，需相应设置桶大小限制。MIME 根据实际图片内容识别。
+- 临时文件手动清理：先暂停上传和保存，运行 `yarn storage:cleanup` 预览；确认后运行 `yarn storage:cleanup --apply`。仅删除超过 24 小时的 `temp/` 对象，跳过作品、资料、流派修正的直接引用；流水记录保留。
+- 迁移文件的原始时间从 `.storage-migration/manifest.json` 读取，也可通过 `--manifest <path>` 指定；新文件使用上传时间。迁移与回滚说明见 [`docs/storage-migration.md`](docs/storage-migration.md)。
 
 ---
 
@@ -230,10 +229,9 @@ OSS_ACCESS_KEY_SECRET=
 | 方法 | 路径                         | 说明                                     |
 | ---- | ---------------------------- | ---------------------------------------- |
 | POST | `/api/classify`              | 风格分类（multipart 或 JSON `imageUrl`） |
-| POST | `/api/upload`                | 上传至 OSS temp/                         |
+| POST | `/api/upload`                | 上传至 `Artmind/temp/`                   |
 | POST | `/api/artworks`              | 新增作品（需鉴权，temp → artworks）      |
 | PUT  | `/api/artworks/:id/analysis` | 更新作品分析结果                         |
-| POST | `/api/avatar`                | 头像上传（需鉴权）                       |
 | GET  | `/api/painters`              | 艺术家列表                               |
 | GET  | `/api/models`                | 27 种流派名                              |
 | GET  | `/api/style-covers`          | 流派封面映射                             |
@@ -246,13 +244,12 @@ OSS_ACCESS_KEY_SECRET=
 
 1. 关联 Git 仓库，Framework Preset 选 **Nuxt**
 2. 配置全部环境变量（Production + Preview）
-3. 确认 OSS `temp/` 生命周期规则
+3. 确认公开桶 `Artmind` 和客户端写入限制，按需手动清理 `temp/`
 4. 修改 Supabase 变量后须 **Redeploy**
 5. 构建命令：`yarn build`
 
 **Serverless 兼容处理：**
 
-- `nitro.externals` 外置 ali-oss / debug
 - 画家数据内联为 `painters-list.ts`
 - HF Space 冷启动约 2–3 分钟，`maxDuration` 已设为 180s
 

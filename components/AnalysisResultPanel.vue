@@ -57,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+import { storagePublicUrl } from '~/utils/storage-assets'
+
 interface AnalysisResult {
   styles: { name: string; confidence: number }[]
   painters: string[]
@@ -142,7 +144,8 @@ const relatedStyle = computed(() => {
   return props.result?.styles[0]?.name?.trim() ?? ''
 })
 
-const VINCENT_LOADING_IMAGE_URL = 'https://artmind.oss-cn-hangzhou.aliyuncs.com/vincent.jpg'
+const config = useRuntimeConfig()
+const VINCENT_LOADING_IMAGE_URL = storagePublicUrl(config.public.supabase.url, 'vincent.jpg')
 </script>
 
 <style scoped>

@@ -9,21 +9,11 @@
     </div>
     <div v-else class="user-content">
       <aside class="user-sidebar">
-        <UserProfileHeader
-          :user="auth.user.value"
-          :stats="profileStats"
-          variant="sidebar"
-          @avatar-success="onAvatarSuccess"
-        />
+        <UserProfileHeader :user="auth.user.value" :stats="profileStats" variant="sidebar" />
       </aside>
       <main class="user-main">
         <div class="user-profile-mobile">
-          <UserProfileHeader
-            :user="auth.user.value"
-            :stats="profileStats"
-            variant="stacked"
-            @avatar-success="onAvatarSuccess"
-          />
+          <UserProfileHeader :user="auth.user.value" :stats="profileStats" variant="stacked" />
         </div>
 
         <v-alert v-if="artworksError" type="error" variant="tonal" class="mb-4">
@@ -138,16 +128,6 @@ watch(analysisRecordsPageCount, (count) => {
 watch(analyzedArtworks, () => {
   analysisRecordsPage.value = 1
 })
-
-async function onAvatarSuccess(url: string) {
-  auth.setPhoto(url)
-  try {
-    await auth.updateProfile({ photo: url })
-    await refreshUserArtworks()
-  } catch {
-    // 已通过 setPhoto 更新展示
-  }
-}
 </script>
 
 <style scoped>

@@ -53,13 +53,13 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
       } catch {
         throw createError({
           statusCode: 503,
-          message: '当前部署环境不支持本地上传，请使用「换一张」选择远程图片后分析',
+          message: '图片上传失败，请稍后重试',
         })
       }
       model = modelField?.data?.toString()
     }
 
-    // multipart：用已有 buffer 直接推理，避免对 OSS URL 发起 HTTP 请求（私有桶会 403）
+    // multipart：用已有 buffer 直接推理，避免额外下载 Storage 中的图片。
     const result = await classify(imageBuffer ?? imageUrl, model)
     const painters = getTopPaintersByStyle(result.topStyle, 3)
     if (process.env.NODE_ENV === 'development') {

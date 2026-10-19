@@ -6,6 +6,7 @@ dist
 coverage
 .cursor
 .specstory
+.storage-migration
 .env
 .env.*
 *.log
