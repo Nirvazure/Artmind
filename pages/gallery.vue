@@ -20,6 +20,11 @@
           @update:scope="updateGalleryFilters($event, false)"
           @update:only-collected="updateGalleryFilters($event ? 'community' : scope, $event)"
         />
+        <StyleKnowledgeCard
+          v-if="filterStore.selectedStyle"
+          class="gallery-knowledge"
+          :style-name="filterStore.selectedStyle"
+        />
         <div v-if="loading" class="gallery-loading">
           <v-progress-circular indeterminate color="primary" size="40" />
         </div>
@@ -210,6 +215,13 @@ function clearFilters() {
 
 .gallery-filters {
   padding-inline: clamp(18px, 2.4vw, 28px);
+}
+
+.gallery-knowledge {
+  margin: 0 clamp(18px, 2.4vw, 28px) 20px;
+  --ui-text: var(--gallery-text);
+  --ui-muted: var(--gallery-text-secondary);
+  --ui-divider: var(--gallery-border);
 }
 
 @media (min-width: 960px) {

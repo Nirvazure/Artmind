@@ -17,6 +17,7 @@
           :output-mode="outputMode"
           @update:output-mode="$emit('update:outputMode', $event)"
         />
+        <StyleKnowledgeCard v-if="relatedStyle" :style-name="relatedStyle" />
         <AnalysisHeroPainters
           :painters="result.painters"
           :style-name="relatedStyle"
@@ -128,13 +129,7 @@ function openArtworkActionDialog() {
   emit('update:saveDialogOpen', true)
 }
 
-interface PainterCatalogItem {
-  name: string
-  style: string
-}
-
-const { data: paintersData } = await useFetch<PainterCatalogItem[]>('/api/painters')
-const paintersCatalog = computed(() => paintersData.value ?? [])
+const { painters: paintersCatalog } = useArtKnowledge()
 
 const artworkStore = useArtworkStore()
 

@@ -5,6 +5,7 @@ node_modules
 dist
 .env
 .storage-migration/
+.knowledge-migration/
 *.log
 .DS_Store
 .specstory

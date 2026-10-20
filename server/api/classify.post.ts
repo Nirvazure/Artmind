@@ -61,7 +61,7 @@ export default defineEventHandler(async (event): Promise<ClassifyResult> => {
 
     // multipart：用已有 buffer 直接推理，避免额外下载 Storage 中的图片。
     const result = await classify(imageBuffer ?? imageUrl, model)
-    const painters = getTopPaintersByStyle(result.topStyle, 3)
+    const painters = await getTopPaintersByStyle(result.topStyle, 3)
     if (process.env.NODE_ENV === 'development') {
       console.warn('[classify] 完成, source:', result.source, 'imageUrl:', imageUrl.slice(0, 50))
     }

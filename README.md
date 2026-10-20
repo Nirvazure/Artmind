@@ -91,7 +91,6 @@ Artmind/
     │   ├── painters/
     │   ├── models/                # 27 流派列表
     │   └── style-covers/
-    ├── data/painters-list.ts      # 画家详情（serverless 内联数据源）
     └── utils/
         ├── auth.ts
         ├── supabase-admin.ts
@@ -185,13 +184,16 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 ### Supabase Postgres（`artmind` schema）
 
-| 表              | 用途                                       |
-| --------------- | ------------------------------------------ |
-| `profiles`      | 用户资料（display_name、avatar_url、role） |
-| `artworks`      | 作品（含 analysis_result jsonb）           |
-| `artwork_likes` | 收藏关系                                   |
-| `uploads`       | 上传流水（temp 路径、过期时间）            |
-| `analysis_logs` | 分析流水                                   |
+| 表                         | 用途                                       |
+| -------------------------- | ------------------------------------------ |
+| `profiles`                 | 用户资料（display_name、avatar_url、role） |
+| `artworks`                 | 作品（含 analysis_result jsonb）           |
+| `artwork_likes`            | 收藏关系                                   |
+| `uploads`                  | 上传流水（temp 路径、过期时间）            |
+| `analysis_logs`            | 分析流水                                   |
+| `knowledge_styles`         | 流派知识卡（模型英文标识为主键）           |
+| `knowledge_painters`       | 画家资料、目录关联及肖像元数据             |
+| `knowledge_style_painters` | 知识卡代表画家关系与展示顺序               |
 
 画廊列表、收藏、资料更新由**客户端直连 Supabase**（RLS 保护）。Nitro 负责 classify / upload / 保存作品 / 更新分析结果。头像使用 GitHub 提供的 HTTPS 地址，`profiles.avatar_url` 作为社区、收藏及他人主页的展示缓存；不再提供头像文件上传。
 
@@ -201,6 +203,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 Artmind/
 ├── temp/       # 临时文件（未保存到画廊）
 ├── artworks/   # 持久化作品
+├── painters/   # 有来源与许可记录的画家肖像
 └── vincent.jpg # 分析加载图
 ```
 
@@ -220,7 +223,19 @@ Artmind/
 2. 设置 `PAINTING_INFERENCE_URL`
 3. 在作品页 `?analyse=true` 上传并分析
 
-分类结果经 `styles-data.ts` 映射为中文流派名，并关联 `painters-list.ts` 推导可能画家。
+分类结果经代码中的模型标签映射为中文流派名，并按 Supabase 当前画家目录关联画家；这些关联不表示作品作者概率。目录服务故障时仍返回正常分类结果和空画家数组，保存流程不依赖知识资料。
+
+### 流派知识与画家资料
+
+分析结果下方和画廊选中流派后，可阅读流派背景知识卡。卡片默认收起，点击整行“流派背景知识”可展开全部简介、时期、典型特征、代表画家、来源及核验日期，再次点击可整体收起；点击目录中的画家可查看资料与肖像。画家列表依据流派目录关联，顺序不代表作品作者概率，背景知识也不等于对当前图片的具体观察。
+
+知识资料使用 AnySearch 检索、阅读权威来源并概括整理，唯一持久数据源为 Supabase 的三张 `knowledge_*` 表；网站通过 Nitro 只读接口获取内容，不调用搜索或生成服务。维护者可在 Dashboard 修改资料，无需重新部署；更新前重新阅读来源正文，并同步修订来源、核验说明和日期。模型类别及中文标签映射继续由代码维护。
+
+服务端实例共用一次完整资料读取，并合并并发请求；成功结果缓存 5 分钟，刷新失败时最多展示 30 分钟内的旧资料并通过响应头标明缓存状态。无可用缓存时接口返回 503，页面局部展示错误和重试，分析、保存与画廊主体继续可用。前端缓存 5 分钟，重新进入页面或手动重试时更新；已打开页面不实时订阅后台修改。迁移、后台编辑与验收说明见 [知识资料数据库维护](docs/art-knowledge-migration.md)。
+
+“资料已核验”表示已核查资料和目录关联的来源，不能用于作品作者归属或真伪鉴定；存在未解决问题的记录明确显示待确认及原因。历史作品保存的画家名称保留兼容匹配，规范译名仅影响展示。核验记录见 [艺术资料审查](docs/art-knowledge-audit.md)，流派来源说明见 [流派资料来源](docs/style-knowledge-sources.md)。
+
+画家肖像使用单独的 `Artmind/painters/` 存储前缀，压缩成不超过 **500,000 字节**的 WebP，保留来源、许可和署名。图片不可用时显示姓名首字。肖像导入和覆盖情况见 [画家头像](docs/painter-portraits.md)，馆藏代表作入口列于 [待办](docs/TODO.md)。
 
 ---
 
@@ -233,6 +248,7 @@ Artmind/
 | POST | `/api/artworks`              | 新增作品（需鉴权，temp → artworks）      |
 | PUT  | `/api/artworks/:id/analysis` | 更新作品分析结果                         |
 | GET  | `/api/painters`              | 艺术家列表                               |
+| GET  | `/api/style-knowledge`       | 按规范流派名索引的知识资料               |
 | GET  | `/api/models`                | 27 种流派名                              |
 | GET  | `/api/style-covers`          | 流派封面映射                             |
 
@@ -250,7 +266,7 @@ Artmind/
 
 **Serverless 兼容处理：**
 
-- 画家数据内联为 `painters-list.ts`
+- 知识数据由服务端使用服务密钥读取；新增表与内部函数不开放给匿名或普通登录用户，服务密钥不进入浏览器。
 - HF Space 冷启动约 2–3 分钟，`maxDuration` 已设为 180s
 
 ---
