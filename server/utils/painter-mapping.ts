@@ -1,25 +1,26 @@
-import { paintersListData } from '../data/painters-list'
+import { getArtKnowledge } from './art-knowledge'
 
-const list = paintersListData
-const cache = new Map<string, string[]>()
-for (const p of list) {
-  const style = (p.style ?? '').trim()
-  if (!style) continue
-  const names = cache.get(style) ?? []
-  if (!names.includes(p.name)) names.push(p.name)
-  cache.set(style, names)
+type DirectoryLoader = () => Promise<{ data: { painters: Array<{ name: string; style: string }> } }>
+
+export async function getPaintersByStyle(
+  style: string,
+  load: DirectoryLoader = getArtKnowledge,
+): Promise<string[]> {
+  try {
+    const { data } = await load()
+    return data.painters
+      .filter((painter) => painter.style === style.trim())
+      .map((painter) => painter.name)
+  } catch {
+    console.warn('[art-knowledge] Painter directory unavailable; classification continues')
+    return []
+  }
 }
 
-function loadCache(): Map<string, string[]> {
-  return cache
-}
-
-export function getPaintersByStyle(style: string): string[] {
-  const map = loadCache()
-  const normalized = style.trim()
-  return map.get(normalized) ?? map.get(style) ?? []
-}
-
-export function getTopPaintersByStyle(style: string, n: number): string[] {
-  return getPaintersByStyle(style).slice(0, n)
+export async function getTopPaintersByStyle(
+  style: string,
+  n: number,
+  load: DirectoryLoader = getArtKnowledge,
+): Promise<string[]> {
+  return (await getPaintersByStyle(style, load)).slice(0, Math.max(0, n))
 }

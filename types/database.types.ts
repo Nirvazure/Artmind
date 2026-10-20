@@ -1,8 +1,48 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
+export type KnowledgeStyleRow = {
+  id: string
+  english_name: string
+  era: string
+  summary: string
+  characteristics: string[]
+  sources: Json
+  verified_at: string
+  created_at: string
+  updated_at: string
+}
+export type KnowledgePainterRow = {
+  name: string
+  display_name: string
+  style_id: string
+  era: string
+  bio: string
+  verified: boolean
+  verification_note: string
+  sources: Json
+  verified_at: string
+  sort_order: number
+  portrait: Json | null
+  created_at: string
+  updated_at: string
+}
+type KnowledgeTable<Row> = {
+  Row: Row
+  Insert: Omit<Row, 'created_at' | 'updated_at'> & { created_at?: string; updated_at?: string }
+  Update: Partial<Row>
+  Relationships: []
+}
+
 export type Database = {
   artmind: {
     Tables: {
+      knowledge_styles: KnowledgeTable<KnowledgeStyleRow>
+      knowledge_painters: KnowledgeTable<KnowledgePainterRow>
+      knowledge_style_painters: KnowledgeTable<{
+        style_id: string
+        painter_name: string
+        sort_order: number
+      }>
       analysis_logs: {
         Row: {
           id: string
@@ -255,7 +295,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_art_knowledge: {
+        Args: Record<string, never>
+        Returns: Json
+      }
     }
     Enums: {
       artwork_status: 'draft' | 'pending' | 'published' | 'rejected'

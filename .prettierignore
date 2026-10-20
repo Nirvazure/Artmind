@@ -7,6 +7,7 @@ coverage
 .cursor
 .specstory
 .storage-migration
+.knowledge-migration
 .env
 .env.*
 *.log

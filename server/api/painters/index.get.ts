@@ -1,12 +1,8 @@
-import { paintersListData } from '../../data/painters-list'
-import type { StyleName } from '../../../utils/style-labels'
+import { knowledgeForRequest } from '../../utils/art-knowledge'
+import type { PainterKnowledge } from '../../../types/art-knowledge'
 
-export interface PainterItem {
-  name: string
-  style: StyleName
-  verified?: boolean
-}
+export type PainterItem = PainterKnowledge
 
-const list = paintersListData
-
-export default defineEventHandler((): PainterItem[] => list)
+export default defineEventHandler(
+  async (event): Promise<PainterItem[]> => (await knowledgeForRequest(event)).painters,
+)
