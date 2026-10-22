@@ -242,10 +242,14 @@ Artmind/
 ## Vercel 部署
 
 1. 关联 Git 仓库，Framework Preset 选 **Nuxt**
-2. 配置全部环境变量（Production + Preview）
+2. 按环境配置 `SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`、`SUPABASE_SECRET_KEY` 和 `PAINTING_INFERENCE_URL`；Preview 使用测试后端对应的配置
 3. 确认公开桶 `Artmind` 和客户端写入限制，按需手动清理 `temp/`
 4. 修改 Supabase 变量后须 **Redeploy**
 5. 构建命令：`yarn build`
+
+`SUPABASE_SECRET_KEY` 填写 Supabase 中为 Artmind 创建的完整新版密钥（`sb_secret_...`），本地开发与存储维护脚本也使用 `.env` 中的同名变量。服务端仅使用新版密钥，不再读取 `SUPABASE_SERVICE_ROLE_KEY`；部署前须配置新变量，再移除 Artmind 的旧变量。公开 URL 和 Publishable Key 必须属于密钥对应的 Supabase 项目，可通过 Vercel Shared 管理。
+
+Secret Key 仅用于 Nitro 服务端和维护脚本，不得放入 `NUXT_PUBLIC_*` 或公开运行配置。它绕过 RLS，应用仍须执行鉴权；专用 Key 便于独立轮换，不限制到 `artmind` schema。Artmind 不需要数据库连接串，此次无需数据库迁移。直接启动构建产物时也可通过私有变量 `NUXT_SUPABASE_SECRET_KEY` 覆盖运行配置。
 
 **Serverless 兼容处理：**
 
