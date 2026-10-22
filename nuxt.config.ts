@@ -47,6 +47,8 @@ export default defineNuxtConfig({
   },
   modules: ['@nuxt/eslint', '@pinia/nuxt', 'vuetify-nuxt-module', '@nuxtjs/supabase'],
   supabase: {
+    // 优先使用统一的公开 Key；未设置时由模块兼容原有 SUPABASE_KEY / Nuxt 别名。
+    key: process.env.SUPABASE_PUBLISHABLE_KEY?.trim() || undefined,
     // 作品页 /:id 为公开路由，禁用全局重定向；登录入口由 /login 与个人页自行控制
     redirect: false,
     clientOptions: {

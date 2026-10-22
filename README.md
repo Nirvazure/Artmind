@@ -161,23 +161,6 @@ ArtMind 使用 [YQYHub 公用 Supabase](docs/yqyhub-shared-auth.md)，业务表�
 
 ---
 
-## 环境变量
-
-复制 [`.env.example`](.env.example) 为 `.env`（勿提交 Git）：
-
-```env
-# AI 推理（必填）
-PAINTING_INFERENCE_URL=https://your-space.hf.space
-
-# Supabase · YQYHub（必填，schema: artmind）
-SUPABASE_URL=https://tfvzcuksahcofooqqezx.supabase.co
-SUPABASE_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-```
-
-也支持 `NUXT_PUBLIC_SUPABASE_*`、`NUXT_PAINTING_INFERENCE_URL` 等 Nuxt 前缀别名，详见 `nuxt.config.ts`。
-
 ---
 
 ## 数据与存储
