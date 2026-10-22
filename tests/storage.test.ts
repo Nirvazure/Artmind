@@ -10,7 +10,7 @@ const publicBase = `${projectUrl}/storage/v1/object/public/Artmind`
 Object.assign(globalThis, {
   useRuntimeConfig: () => ({
     public: { supabase: { url: projectUrl } },
-    supabaseServiceRoleKey: 'test-service-role',
+    supabaseSecretKey: 'sb_secret_test-storage',
   }),
 })
 
@@ -35,6 +35,7 @@ test('save uploads actual image MIME to Artmind without overwrite and propagates
   assert.equal(requests.length, 1)
   assert.equal(requests[0]!.url, `${projectUrl}/storage/v1/object/Artmind/temp/mismatch.png`)
   const headers = new Headers(requests[0]!.options.headers)
+  assert.equal(headers.get('apikey'), 'sb_secret_test-storage')
   assert.equal(headers.get('content-type'), 'image/jpeg')
   assert.equal(headers.get('x-upsert'), 'false')
   await assert.rejects(saveFile(Buffer.from('bad image'), 'bad.jpg'))

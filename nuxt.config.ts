@@ -30,7 +30,7 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/app.css'],
   runtimeConfig: {
-    supabaseServiceRoleKey: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
+    supabaseSecretKey: (process.env.SUPABASE_SECRET_KEY || '').trim(),
     paintingInferenceUrl: (
       process.env.PAINTING_INFERENCE_URL ||
       process.env.NUXT_PAINTING_INFERENCE_URL ||

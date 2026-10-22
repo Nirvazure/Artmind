@@ -5,8 +5,8 @@ import { STORAGE_BUCKET, storageObjectKey } from '../../utils/storage-assets.ts'
 export function storageAdmin() {
   if (existsSync('.env')) process.loadEnvFile('.env')
   const url = (process.env.SUPABASE_URL ?? process.env.NUXT_PUBLIC_SUPABASE_URL)?.trim()
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
-  if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required')
+  const key = process.env.SUPABASE_SECRET_KEY?.trim()
+  if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SECRET_KEY are required')
   return {
     url,
     client: createClient(url, key, {

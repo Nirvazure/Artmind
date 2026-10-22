@@ -13,9 +13,11 @@ export function getSupabaseAdmin(): AdminClient {
     process.env.SUPABASE_URL ??
     process.env.NUXT_PUBLIC_SUPABASE_URL ??
     ''
-  const key = config.supabaseServiceRoleKey as string
+  const key =
+    (config.supabaseSecretKey as string | undefined)?.trim() ||
+    process.env.SUPABASE_SECRET_KEY?.trim()
   if (!url || !key) {
-    throw new Error('Supabase admin not configured (SUPABASE_SERVICE_ROLE_KEY required)')
+    throw new Error('Supabase admin not configured (SUPABASE_URL and SUPABASE_SECRET_KEY required)')
   }
   adminClient = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
